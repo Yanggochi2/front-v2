@@ -10,8 +10,8 @@ const STEPS = [
 export default function ScheduleEmptyState() {
   return (
     <>
-      <div className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[24px] border border-line bg-white px-10 py-[72px] text-center">
-        <div className="flex size-24 items-center justify-center rounded-full bg-primary-soft text-[40px] font-bold text-primary" aria-hidden>
+      <div className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[28px] border border-line bg-white px-10 shadow-card py-[72px] text-center">
+        <div className="flex size-24 items-center justify-center rounded-full bg-primary-soft text-[40px] ring-[10px] ring-primary-soft/40 font-bold text-primary" aria-hidden>
           ＋
         </div>
         <p className="max-w-[640px] text-[26px] font-bold text-ink">함께 일하는 간호사가 아직 없어요</p>
@@ -30,7 +30,7 @@ export default function ScheduleEmptyState() {
       </div>
       <ol className="grid w-full grid-cols-3 gap-6">
         {STEPS.map((s, i) => (
-          <li key={s.title} className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-white px-7 py-6">
+          <li key={s.title} className="flex flex-col gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-6">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-[18px] font-bold text-primary">{i + 1}</span>
             <p className="text-[20px] font-bold text-ink">{s.title}</p>
             <p className="text-[16px] font-medium text-ink-sub">{s.description}</p>

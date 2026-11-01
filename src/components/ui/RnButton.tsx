@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BUTTON_BASE, BUTTON_TONE } from "./buttonStyles";
 
 type Props = {
   variant: "primary" | "secondary";
@@ -23,9 +24,7 @@ export default function RnButton({
   className = "",
   children,
 }: Props) {
-  const cls = `inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[12px] font-bold ${
-    size === "lg" ? "h-14 px-7 text-[18px]" : "h-12 px-4 text-[16px]"
-  } ${variant === "primary" ? "bg-primary text-white" : "bg-surface text-ink-sub"} ${className}`;
+  const cls = `${BUTTON_BASE} ${size === "lg" ? "h-14 rounded-[16px] px-7 text-[18px]" : "h-12 rounded-[14px] px-5 text-[16px]"} ${BUTTON_TONE[variant]} ${className}`;
 
   if (href) {
     return (
@@ -35,7 +34,7 @@ export default function RnButton({
     );
   }
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`${cls} disabled:opacity-50`}>
+    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
       {children}
     </button>
   );

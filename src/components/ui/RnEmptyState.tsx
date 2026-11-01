@@ -12,10 +12,10 @@ export default function RnEmptyState({
   action: ReactNode;
 }) {
   return (
-    <section className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[24px] border border-line bg-white px-10 py-[72px]">
+    <section className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[28px] border border-line bg-white px-10 py-[72px] shadow-card">
       <div
         aria-hidden
-        className="flex size-24 items-center justify-center rounded-full bg-primary-soft text-[40px] font-bold text-primary"
+        className="flex size-24 items-center justify-center rounded-full bg-primary-soft text-[40px] ring-[10px] ring-primary-soft/40 font-bold text-primary"
       >
         {icon}
       </div>

@@ -4,11 +4,13 @@ import Link from "next/link";
 import { movePeriod, scheduleHref } from "@/lib/schedulePeriod";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ScheduleButton from "@/components/ui/ScheduleButton";
+import ScheduleChip from "@/components/ui/ScheduleChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useScheduleEditor } from "@/hooks/useScheduleEditor";
 import { compareNurses } from "@/lib/nurseSort";
 import type { EditableDutyCode, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
+import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
@@ -22,6 +24,14 @@ const POPOVER_HEIGHT = 170;
 // 위반 메시지 한 줄당 늘어나는 팝오버 높이 (위/아래 배치 계산용)
 const POPOVER_PROBLEM_LINE = 26;
 
+
+// 제목 옆 근무표 상태 표시 (수간호사 화면)
+const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand" }> = {
+  DRAFT: { label: "작성 중", tone: "gray" },
+  GENERATING: { label: "자동 생성 중", tone: "brand" },
+  CONFIRMED: { label: "확정", tone: "brand" },
+  ARCHIVED: { label: "지난 근무표", tone: "gray" },
+};
 
 // canManage: 수간호사만 true. 간호사는 확정된 근무표를 보기만 하므로 편집 도구와 확정 버튼을 숨긴다.
 export default function ScheduleSheet({ sheet, canManage = true }: { sheet: ScheduleSheetData; canManage?: boolean }) {
@@ -98,17 +108,22 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     <>
       {/* 24인치(1920×1080)에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 위아래 여백과 줄 수를 줄였다. */}
       <div className="flex min-h-0 w-full flex-1 flex-col">
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 rounded-[20px] border border-line bg-white px-5 py-3 print:border-0 print:p-0">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-[24px] border border-line bg-white px-5 py-4 shadow-card print:border-0 print:p-0 print:shadow-none">
           <div className="flex min-h-[52px] flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-3">
-              <h2 className="text-[28px] leading-normal font-bold text-ink">{sheet.title}</h2>
-              <Link href={prevHref} aria-label="이전" className="flex size-11 print:hidden items-center justify-center rounded-[18px] bg-surface text-[22px] font-bold text-ink-sub">
+              <h2 className="text-[28px] leading-normal font-bold tracking-[-0.02em] text-ink">{sheet.title}</h2>
+              <Link href={prevHref} aria-label="이전" className="flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden">
                 ‹
               </Link>
-              <Link href={nextHref} aria-label="다음" className="flex size-11 print:hidden items-center justify-center rounded-[18px] bg-surface text-[22px] font-bold text-ink-sub">
+              <Link href={nextHref} aria-label="다음" className="flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden">
                 ›
               </Link>
-              {canManage ? <p className="text-[15px] font-medium text-ink-sub print:hidden">셀을 눌러 바로 수정 · 자동 저장</p> : null}
+              {canManage ? (
+                <span className="flex items-center gap-2 print:hidden">
+                  <ScheduleChip tone={STATUS_CHIP[api.status].tone}>{STATUS_CHIP[api.status].label}</ScheduleChip>
+                  <span className="text-[15px] font-medium text-ink-mute">칸을 눌러 바로 수정 · 자동 저장</span>
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-3 print:hidden">
               <ScheduleSegmented
@@ -134,7 +149,7 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
             ) : null}
           </div>
           {canManage ? (
-            <div className="print:hidden">
+            <div className="rounded-[18px] bg-canvas px-3 py-2 ring-1 ring-line ring-inset print:hidden">
               <ScheduleToolbar
                 brush={brush}
                 onBrushChange={setBrush}
@@ -165,7 +180,8 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
               onScroll={closePopover}
             />
             {showEmptyGuide ? (
-              <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[20px] border border-line bg-white p-5 text-center shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+              <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[24px] border border-line bg-white p-6 text-center shadow-pop">
+                <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
                 <p className="text-[22px] font-bold text-ink">아직 비어 있어요</p>
                 <p className="text-[16px] font-medium text-ink-sub">
                   칸을 눌러 근무를 넣거나, 자동 생성으로 한 번에 채워요. 연차는 이미 들어가 있어요.

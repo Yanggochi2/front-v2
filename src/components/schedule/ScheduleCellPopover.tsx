@@ -16,7 +16,7 @@ export default function ScheduleCellPopover({ top, left, above, problems, onPick
       role="dialog"
       aria-label="이 칸을 바꿀까요?"
       style={{ top, left }}
-      className={`fixed z-50 flex flex-col gap-3 rounded-[20px] border border-line bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] ${above ? "-translate-y-full" : ""}`}
+      className={`fixed z-50 flex flex-col gap-3 rounded-[22px] border border-line bg-white p-4 shadow-pop ${above ? "-translate-y-full" : ""}`}
     >
       <p className="text-[18px] font-bold text-ink">이 칸을 바꿀까요?</p>
       {problems?.length ? (
@@ -34,7 +34,7 @@ export default function ScheduleCellPopover({ top, left, above, problems, onPick
             key={code}
             type="button"
             onClick={() => onPick(code)}
-            className={`flex h-[52px] w-[66px] items-center justify-center rounded-[12px] border-2 ${DUTY_STYLE[code].cell} ${DUTY_STYLE[code].edge} text-[20px]`}
+            className={`flex h-[52px] w-[66px] items-center justify-center rounded-[14px] border-2 ${DUTY_STYLE[code].cell} ${DUTY_STYLE[code].edge} text-[20px] transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-[0_4px_10px_rgb(25_31_40/0.12)] active:translate-y-0`}
           >
             {DUTY_STYLE[code].weekLabel}
           </button>

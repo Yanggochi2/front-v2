@@ -53,10 +53,16 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
       {status === "DRAFT" && blocked ? (
-        <p className="text-[17px] font-bold text-danger">규칙 위반 {hardViolationCount}건을 고쳐야 확정할 수 있어요</p>
+        <p className="flex items-center gap-2 rounded-full bg-danger-soft py-1.5 pr-4 pl-1.5 text-[16px] font-bold text-danger">
+          <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-danger text-[14px] text-white">!</span>
+          규칙 위반 {hardViolationCount}건을 고쳐야 확정할 수 있어요
+        </p>
       ) : null}
       {status === "CONFIRMED" ? (
-        <p className="text-[17px] font-bold text-ok">확정된 근무표예요. 간호사들에게 공개됐어요</p>
+        <p className="flex items-center gap-2 rounded-full bg-ok-soft py-1.5 pr-4 pl-1.5 text-[16px] font-bold text-ok">
+          <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-ok text-[14px] text-white">✓</span>
+          확정된 근무표예요. 간호사들에게 공개됐어요
+        </p>
       ) : null}
       <div className="flex items-center gap-3">
         {status === "DRAFT" ? (

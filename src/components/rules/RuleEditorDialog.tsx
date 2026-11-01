@@ -77,12 +77,12 @@ export default function RuleEditorDialog({ rule, onSaved, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="rule-editor-title"
-        className="flex w-[640px] flex-col gap-6 rounded-[20px] bg-white p-8 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        className="flex w-[640px] flex-col gap-6 rounded-[28px] bg-white p-8 shadow-pop"
       >
         <h2 id="rule-editor-title" className="text-[26px] font-bold text-ink">
           {editing ? `${rule.name} 수정` : "규칙 추가"}

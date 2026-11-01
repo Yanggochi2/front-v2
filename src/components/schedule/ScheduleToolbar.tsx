@@ -37,7 +37,7 @@ export default function ScheduleToolbar({
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[16px] font-bold text-ink">칸 바꾸기</p>
+        <p className="pr-1 text-[16px] font-bold text-ink">칸 바꾸기</p>
         {DUTY_ORDER.map((code) => {
           const active = brush === code;
           return (
@@ -46,24 +46,31 @@ export default function ScheduleToolbar({
               type="button"
               aria-pressed={active}
               onClick={() => onBrushChange(active ? null : code)}
-              className={`rounded-[12px] px-4 py-[11px] text-[16px] font-bold ${BRUSH_BG[code]} ${active ? `ring-2 ${BRUSH_RING[code]}` : ""}`}
+              className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                active
+                  ? `${BRUSH_BG[code]} shadow-[0_2px_8px_rgb(25_31_40/0.12)] ring-2 ${BRUSH_RING[code]}`
+                  : "border border-line bg-white text-ink-sub hover:border-grid hover:text-ink"
+              }`}
             >
+              {/* 근무 색 견본: 시트 칸과 같은 색이라 눌러 둔 근무를 바로 알아본다 */}
+              <span aria-hidden className={`size-4 rounded-[5px] border ${DUTY_STYLE[code].cell.split(" ")[0]} ${DUTY_STYLE[code].edge}`} />
               {DUTY_STYLE[code].brushLabel}
             </button>
           );
         })}
       </div>
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <p className="text-[16px] font-bold text-ink">정렬</p>
           <ScheduleSegmented options={SORT_OPTIONS} value={sort} onChange={onSortChange} ariaLabel="간호사 정렬" />
         </div>
+        <span aria-hidden className="mx-1 h-6 w-px bg-line" />
         <button
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
           title="Ctrl+Z"
-          className="py-2 text-[16px] font-medium text-ink-sub disabled:opacity-60"
+          className="flex h-11 items-center rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           ↶ 되돌리기
         </button>
@@ -72,10 +79,11 @@ export default function ScheduleToolbar({
           onClick={onRedo}
           disabled={!canRedo}
           title="Ctrl+Y"
-          className="py-2 text-[16px] font-medium text-ink-sub disabled:opacity-60"
+          className="flex h-11 items-center rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           ↷ 다시 실행
         </button>
+        <span aria-hidden className="mx-1 h-6 w-px bg-line" />
         <ScheduleToggle checked={checkOnly} onChange={onCheckOnlyChange} label="확인 필요한 칸만 보기" />
       </div>
     </div>

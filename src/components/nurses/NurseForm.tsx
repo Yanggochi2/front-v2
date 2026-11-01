@@ -47,7 +47,7 @@ export default function NurseForm({ nurse }: { nurse?: NurseDetail }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-8">
       <div className="flex items-start gap-6">
-        <div className="grid w-full max-w-[904px] flex-1 grid-cols-2 gap-x-6 gap-y-7 rounded-[20px] border border-line bg-white p-8">
+        <div className="grid w-full max-w-[904px] flex-1 grid-cols-2 gap-x-6 gap-y-7 rounded-[24px] border border-line bg-white shadow-card p-8">
           <NurseProfileFields draft={draft} onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
         </div>
 

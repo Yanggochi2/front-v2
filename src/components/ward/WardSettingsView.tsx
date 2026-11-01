@@ -8,8 +8,11 @@ import type { WardSettingsData } from "@/types/ward.type";
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex w-full flex-col items-start gap-2.5 rounded-[20px] border border-line bg-white px-7 py-[26px]">
-      <h2 className="text-[18px] leading-normal font-bold text-ink">{title}</h2>
+    <section className="flex w-full flex-col items-start gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+      <h2 className="flex items-center gap-2 text-[18px] leading-normal font-bold text-ink">
+        <span aria-hidden className="size-2 rounded-full bg-primary" />
+        {title}
+      </h2>
       {children}
     </section>
   );

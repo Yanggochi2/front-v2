@@ -65,12 +65,12 @@ export default function ApprovalLinkDialog({ request, unlinkedNurses, onApproved
 
   return (
     // 표 칸(whitespace-nowrap) 안에서 열리므로 줄바꿈 상속을 끊는다
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 whitespace-normal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px] whitespace-normal">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="approval-link-title"
-        className="flex max-h-[92vh] w-[920px] flex-col gap-6 overflow-y-auto rounded-[20px] bg-white p-8 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        className="flex max-h-[92vh] w-[920px] flex-col gap-6 overflow-y-auto rounded-[28px] bg-white p-8 shadow-pop"
       >
         <div className="flex flex-col gap-2">
           <h2 id="approval-link-title" className="text-[26px] font-bold text-ink">

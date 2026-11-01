@@ -22,16 +22,16 @@ const cell = "h-[72px] whitespace-nowrap pr-3 pl-5 text-left align-middle";
 export default function RequestsTable({ items, mine = false }: { items: RequestItem[]; mine?: boolean }) {
   const headers = mine ? MY_HEADERS : HEADERS;
   return (
-    <div className="w-full overflow-x-auto rounded-[16px] border border-line bg-white">
+    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-white shadow-card">
       <table className="w-full min-w-[960px] border-collapse">
         <thead>
-          <tr className="bg-surface">
+          <tr className="border-b border-line bg-canvas">
             {headers.map((h, i) => (
               <th
                 key={h}
                 scope="col"
                 className={`h-[52px] whitespace-nowrap pr-3 pl-5 text-left text-[16px] font-bold text-ink-sub ${
-                  i === 0 && !mine ? "sticky left-0 z-10 w-40 bg-surface" : ""
+                  i === 0 && !mine ? "sticky left-0 z-10 w-40 bg-canvas" : ""
                 }`}
               >
                 {h}
@@ -42,15 +42,15 @@ export default function RequestsTable({ items, mine = false }: { items: RequestI
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={headers.length} className="h-[72px] pl-5 text-[17px] font-medium text-ink-mute">
+              <td colSpan={headers.length} className="h-[96px] pl-5 text-center text-[17px] font-medium text-ink-mute">
                 조건에 맞는 신청이 없어요
               </td>
             </tr>
           ) : (
             items.map((r) => (
-              <tr key={r.id} className="border-b border-surface bg-white">
+              <tr key={r.id} className="group border-b border-line/70 bg-white transition-colors last:border-b-0 hover:bg-canvas">
                 {mine ? null : (
-                  <th scope="row" className={`${cell} sticky left-0 z-10 w-40 bg-white text-[17px] font-bold text-ink`}>
+                  <th scope="row" className={`${cell} sticky left-0 z-10 w-40 bg-white text-[17px] font-bold text-ink transition-colors group-hover:bg-canvas`}>
                     {r.nurseName}
                   </th>
                 )}

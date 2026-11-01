@@ -21,6 +21,14 @@
 
   --color-primary: #a65468;
   --color-primary-soft: #f7e9ed;
+  /* 메인 버건디의 눌림·hover 색과 앱 바탕색. 팔레트 밖의 새 색이 아니라 같은 계열의 명도만 바꾼 값 */
+  --color-primary-strong: #8e4357;
+  --color-canvas: #f6f7f9;
+
+  /* 카드·떠 있는 창·주요 버튼 그림자 */
+  --shadow-card: 0 1px 2px rgb(25 31 40 / 0.04), 0 6px 20px -8px rgb(25 31 40 / 0.08);
+  --shadow-pop: 0 2px 6px rgb(25 31 40 / 0.06), 0 24px 48px -12px rgb(25 31 40 / 0.22);
+  --shadow-cta: 0 1px 2px rgb(142 67 87 / 0.25), 0 8px 20px -8px rgb(166 84 104 / 0.65);
 
   --color-ok: #1e7a4c;
   --color-ok-soft: #e8f7ef;

@@ -12,7 +12,7 @@ type Props = {
   onDeleted: (id: string) => void;
 };
 
-const linkCls = "text-[17px] font-bold text-primary disabled:opacity-50";
+const linkCls = "h-11 rounded-[12px] px-3 text-[17px] font-bold text-primary transition-colors hover:bg-primary-soft disabled:opacity-50";
 
 // 규칙 한 줄의 수정 · 켜기/끄기 · 삭제. 삭제는 한 번 더 묻는다.
 export default function RuleRowActions({ rule, onEdit, onChanged, onDeleted }: Props) {
@@ -35,9 +35,9 @@ export default function RuleRowActions({ rule, onEdit, onChanged, onDeleted }: P
   return (
     <div className="flex flex-col gap-1">
       {confirmDelete ? (
-        <div className="flex items-center gap-3">
-          <span className="text-[16px] font-medium text-ink-sub">지울까요?</span>
-          <button type="button" onClick={remove} disabled={loading} className="text-[17px] font-bold text-danger disabled:opacity-50">
+        <div className="flex items-center gap-1">
+          <span className="pr-2 text-[16px] font-medium text-ink-sub">지울까요?</span>
+          <button type="button" onClick={remove} disabled={loading} className="h-11 rounded-[12px] px-3 text-[17px] font-bold text-danger transition-colors hover:bg-danger-soft disabled:opacity-50">
             삭제
           </button>
           <button type="button" onClick={() => setConfirmDelete(false)} disabled={loading} className={linkCls}>
@@ -45,7 +45,7 @@ export default function RuleRowActions({ rule, onEdit, onChanged, onDeleted }: P
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-4">
+        <div className="-ml-3 flex items-center gap-1">
           <button type="button" onClick={() => onEdit(rule)} disabled={loading} className={linkCls}>
             수정
           </button>

@@ -5,7 +5,7 @@ export default function RnErrorState({ message, retryHref }: { message: string; 
   return (
     <section
       role="alert"
-      className="flex w-full flex-col items-center gap-[18px] rounded-[24px] border border-line bg-white px-10 py-[72px]"
+      className="flex w-full flex-col items-center gap-[18px] rounded-[28px] border border-line bg-white px-10 py-[72px] shadow-card"
     >
       <p className="text-center text-[22px] font-bold text-ink">{message}</p>
       <RnButton variant="secondary" size="lg" href={retryHref}>

@@ -13,16 +13,16 @@ const career = (n: Nurse) =>
 
 export default function NursesTable({ items }: { items: Nurse[] }) {
   return (
-    <div className="w-full overflow-x-auto rounded-[16px] border border-line bg-white">
+    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-white shadow-card">
       <table className="w-full min-w-[960px] border-collapse">
         <thead>
-          <tr className="bg-surface">
+          <tr className="border-b border-line bg-canvas">
             {HEADERS.map((h, i) => (
               <th
                 key={i}
                 scope="col"
                 className={`h-[52px] whitespace-nowrap pr-3 pl-6 text-left text-[17px] font-bold text-ink-sub ${
-                  i === 0 ? "sticky left-0 z-10 w-[240px] bg-surface" : ""
+                  i === 0 ? "sticky left-0 z-10 w-[240px] bg-canvas" : ""
                 }`}
               >
                 {h || <span className="sr-only">관리</span>}
@@ -34,9 +34,12 @@ export default function NursesTable({ items }: { items: Nurse[] }) {
           {items.map((n) => {
             const showDuty = n.dutyRole && !(n.role === "HEAD_NURSE" && n.dutyRole === "GENERAL");
             return (
-              <tr key={n.id} className="border-b border-surface bg-white">
-                <th scope="row" className={`${cell} sticky left-0 z-10 w-[240px] bg-white text-[19px] font-bold text-ink`}>
-                  <span className="flex items-center gap-2">
+              <tr key={n.id} className="group border-b border-line/70 bg-white transition-colors last:border-b-0 hover:bg-canvas">
+                <th scope="row" className={`${cell} sticky left-0 z-10 w-[240px] bg-white text-[19px] font-bold text-ink transition-colors group-hover:bg-canvas`}>
+                  <span className="flex items-center gap-3">
+                    <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[17px] font-bold text-primary">
+                      {n.name.slice(0, 1)}
+                    </span>
                     {n.name}
                     {n.status && n.status !== "ACTIVE" ? (
                       <RnChip tone={n.status === "RETIRED" ? "gray" : "danger"}>{NURSE_STATUS_LABEL[n.status]}</RnChip>

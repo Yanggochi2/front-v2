@@ -9,7 +9,7 @@ export function AdminTableShell({
   children: ReactNode;
 }) {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-line bg-white">
+    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-white shadow-card">
       <table className={`w-full border-collapse ${minWidth}`}>{children}</table>
     </div>
   );
@@ -27,7 +27,7 @@ export function AdminTh({
   return (
     <th
       scope="col"
-      className={`h-[52px] bg-surface pr-3 pl-5 text-left text-[16px] font-bold whitespace-nowrap text-ink-sub ${
+      className={`h-[52px] border-b border-line bg-canvas pr-3 pl-5 text-left text-[16px] font-bold whitespace-nowrap text-ink-sub ${
         first ? "sticky left-0 z-10" : ""
       } ${className}`}
     >
@@ -37,7 +37,7 @@ export function AdminTh({
 }
 
 export function AdminTr({ children }: { children: ReactNode }) {
-  return <tr className="border-b border-surface last:border-b">{children}</tr>;
+  return <tr className="group border-b border-line/70 transition-colors last:border-b-0 hover:bg-canvas">{children}</tr>;
 }
 
 export function AdminTd({
@@ -52,7 +52,7 @@ export function AdminTd({
   return (
     <td
       className={`h-[72px] pr-3 pl-5 text-[17px] whitespace-nowrap ${
-        first ? "sticky left-0 z-10 bg-white font-bold text-ink" : "font-medium text-ink-sub"
+        first ? "sticky left-0 z-10 bg-white font-bold text-ink transition-colors group-hover:bg-canvas" : "font-medium text-ink-sub"
       } ${className}`}
     >
       {children}
@@ -64,7 +64,7 @@ export function AdminTd({
 export function AdminTableEmptyRow({ colSpan, children }: { colSpan: number; children: ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="h-[72px] pl-5 text-[17px] font-medium text-ink-mute">
+      <td colSpan={colSpan} className="h-[96px] pl-5 text-center text-[17px] font-medium text-ink-mute">
         {children}
       </td>
     </tr>

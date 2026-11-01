@@ -36,12 +36,12 @@ export default function ScheduleConfirmDialog({
   }, [busy, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="schedule-confirm-title"
-        className="flex w-[480px] flex-col gap-4 rounded-[20px] bg-white p-7 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        className="flex w-[480px] flex-col gap-4 rounded-[28px] bg-white p-8 shadow-pop"
       >
         <h2 id="schedule-confirm-title" className="text-[24px] font-bold text-ink">
           {title}
@@ -55,7 +55,7 @@ export default function ScheduleConfirmDialog({
             placeholder={reasonLabel}
             rows={3}
             autoFocus
-            className="w-full resize-none rounded-[14px] bg-surface px-4 py-3 text-[17px] font-medium text-ink placeholder:text-ink-faint"
+            className="w-full resize-none rounded-[14px] bg-surface px-4 py-3 text-[17px] font-medium text-ink outline-none placeholder:text-ink-faint focus:ring-2 focus:ring-primary"
           />
         ) : null}
         {error ? (
@@ -63,7 +63,7 @@ export default function ScheduleConfirmDialog({
             {error}
           </p>
         ) : null}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pt-2">
           <ScheduleButton variant="neutral" size="sm" onClick={onClose} disabled={busy}>
             닫기
           </ScheduleButton>
