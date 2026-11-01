@@ -21,10 +21,16 @@ const WEEKDAY_TEXT = { default: "text-ink-sub", sat: "text-brand", sun: "text-da
 const HEAD_BG = { default: "bg-canvas", sat: "bg-brand-soft", sun: "bg-danger-soft", holiday: "bg-danger-soft" } as const;
 const EMPTY_BG = { default: "bg-white", sat: "bg-brand-soft/30", sun: "bg-danger-soft/30", holiday: "bg-danger-soft/30" } as const;
 
-// 하단 인원 행. 세로 스크롤에도 보이도록 아래에서부터 쌓아 고정한다 (행 높이 h-11).
+// 표가 영역 높이에 맞춰 행을 늘릴 때 한 행이 커질 수 있는 최대 높이(px). 이름 머리·인원 행 높이와 함께
+// 표 높이를 정해, "확인 필요한 칸만 보기"처럼 행이 적을 때 몇 줄이 화면 가득 늘어나지 않게 한다.
+const MAX_ROW_PX = { month: 40, week: 56 } as const;
+const HEAD_PX = 48;
+const COVERAGE_ROW_PX = 40;
+
+// 하단 인원 행. 세로 스크롤에도 보이도록 아래에서부터 쌓아 고정한다 (행 높이 h-10).
 const COVERAGE_ROWS: { duty: CoverageDuty; bottom: string }[] = [
-  { duty: "D", bottom: "bottom-22" },
-  { duty: "E", bottom: "bottom-11" },
+  { duty: "D", bottom: "bottom-20" },
+  { duty: "E", bottom: "bottom-10" },
   { duty: "N", bottom: "bottom-0" },
 ];
 
@@ -51,15 +57,21 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
 export default function ScheduleGrid({ view, days, rows, coverage, selected, onCellClick, onScroll }: Props) {
   const isMonth = view === "month";
   const nameW = isMonth ? "w-[112px]" : "w-[151px]";
-  // 월간: 28~30명이 24인치 한 화면에 들어오도록 최소 높이만 정하고, 남는 높이는 표(h-full)가 행에 나눠 준다.
+  // 월간: 28~30명이 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
+  // 남는 높이는 표가 영역 높이까지(행당 MAX_ROW_PX 이하로) 행에 나눠 준다. 주간은 넉넉한 높이로 두고 넘치면 안에서 스크롤한다.
   const rowH = isMonth ? "h-7 print:h-6" : "h-10";
+  // 칸 안의 근무 타일. 월간은 칸을 거의 채우고, 주간은 넓은 칸 가운데에 알약 모양으로 둔다.
+  const tile = isMonth
+    ? { pad: "p-[3px]", radius: "rounded-[6px]", shape: "w-full" }
+    : { pad: "p-1", radius: "rounded-[10px]", shape: "w-full max-w-[148px]" };
   const headH = "h-12";
   const starts = groupStarts(rows);
+  const tableMaxPx = HEAD_PX + (coverage ? COVERAGE_ROWS.length * COVERAGE_ROW_PX : 0) + rows.length * MAX_ROW_PX[view];
 
   return (
     <div onScroll={onScroll} className="absolute inset-0 overflow-auto rounded-[16px] border border-line print:static print:overflow-visible print:rounded-none">
       {/* 시트 전체가 화면 안에 들어오도록 표를 영역 크기에 맞춘다. 영역이 너무 작을 때만 안에서 스크롤한다. */}
-      <table className="h-full w-full table-fixed border-separate border-spacing-0">
+      <table style={{ height: `min(100%, ${tableMaxPx}px)` }} className="w-full table-fixed border-separate border-spacing-0">
         <thead>
           <tr>
             <th
@@ -119,41 +131,64 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, onC
                 </th>
                 {row.cells.map((cell, col) => {
                   const isSelected = selected?.row === index && selected.col === col;
+                  const editable = !!onCellClick && cell.editable !== false;
+                  const day = days[col];
                   const style = cell.duty ? DUTY_STYLE[cell.duty] : null;
                   const label = style ? (isMonth ? style.monthLabel : style.weekLabel) : "";
                   const labelSize = isMonth ? (cell.duty === "AL" || cell.duty === "ED" ? "text-[15px]" : "text-[20px]") : cell.duty === "AL" || cell.duty === "ED" ? "text-[18px]" : "text-[22px]";
                   return (
-                    <td key={col} title={cell.violations?.join("\n")} className={`relative border-r border-b border-line p-[2px] ${rowH} ${groupTop} ${EMPTY_BG[days[col].tone]}`}>
+                    <td
+                      key={col}
+                      title={cell.violations?.join("\n")}
+                      className={`relative border-r border-b border-line transition-colors ${tile.pad} ${rowH} ${groupTop} ${day.isToday ? "bg-primary-soft" : `${EMPTY_BG[day.tone]} group-hover:bg-primary-soft/40`}`}
+                    >
                       <button
                         type="button"
-                        disabled={!onCellClick || cell.editable === false}
+                        disabled={!editable}
                         onClick={(e) => onCellClick?.(index, col, e.currentTarget)}
-                        aria-label={`${row.name} ${days[col].date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}${cell.approvedOff ? " 희망 오프" : ""}`}
-                        className={`flex size-full items-center justify-center leading-none transition-[filter,background-color] duration-100 enabled:cursor-pointer disabled:cursor-default ${isMonth ? "rounded-[6px]" : "rounded-[10px]"} ${style ? `${style.cell} enabled:hover:brightness-95` : "text-ink enabled:hover:bg-surface"} ${labelSize}`}
+                        aria-label={`${row.name} ${day.date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}${cell.approvedOff ? " 희망 오프" : ""}`}
+                        className={`group/cell flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-primary enabled:cursor-pointer disabled:cursor-default ${tile.radius}`}
                       >
-                        {label}
+                        {/* 빈 칸(미배정)은 고칠 수 있을 때만 점선 타일로 보여 준다. 소속 기간 밖처럼 못 고치는 칸은 비워 둔다. */}
+                        <span
+                          className={`relative flex h-full items-center justify-center gap-1.5 leading-none transition-[filter,background-color,border-color] duration-100 ${tile.shape} ${tile.radius} ${labelSize} ${
+                            style
+                              ? `${style.cell} ${style.ring} ${editable ? "group-hover/cell:brightness-95" : ""}`
+                              : editable
+                                ? "border border-dashed border-grid text-ink group-hover/cell:border-primary group-hover/cell:bg-primary-soft"
+                                : "text-ink"
+                          }`}
+                        >
+                          {label}
+                          {/* 주간은 희망·차지 표시를 타일 안에 글자로 붙인다 */}
+                          {!isMonth && cell.approvedOff ? (
+                            <span aria-hidden className="rounded-full bg-ink-sub px-1.5 py-0.5 text-[12px] leading-tight font-bold text-white">
+                              희망
+                            </span>
+                          ) : null}
+                          {!isMonth && cell.charge ? (
+                            <span aria-hidden className="rounded-full bg-primary px-1.5 py-0.5 text-[12px] leading-tight font-bold text-white">
+                              차지
+                            </span>
+                          ) : null}
+                          {cell.flag === "violation" ? (
+                            <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-danger ring-inset" />
+                          ) : null}
+                          {isSelected ? (
+                            <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-primary ring-inset" />
+                          ) : null}
+                        </span>
                       </button>
-                      {cell.approvedOff ? (
-                        <span
-                          aria-hidden
-                          className={`pointer-events-none absolute top-[3px] left-[3px] rounded-full bg-ink-sub px-1 leading-tight font-bold text-white ${isMonth ? "text-[10px]" : "text-[12px]"}`}
-                        >
-                          {isMonth ? "희" : "희망"}
+                      {/* 월간은 칸이 좁아 희·C 표시를 타일 모서리에 얹는다 */}
+                      {isMonth && cell.approvedOff ? (
+                        <span aria-hidden className="pointer-events-none absolute top-1 left-1 rounded-full bg-ink-sub px-1 text-[10px] leading-tight font-bold text-white">
+                          희
                         </span>
                       ) : null}
-                      {cell.charge ? (
-                        <span
-                          aria-hidden
-                          className={`pointer-events-none absolute top-[3px] right-[3px] rounded-full bg-primary px-1 leading-tight font-bold text-white ${isMonth ? "text-[10px]" : "text-[12px]"}`}
-                        >
-                          {isMonth ? "C" : "차지"}
+                      {isMonth && cell.charge ? (
+                        <span aria-hidden className="pointer-events-none absolute top-1 right-1 rounded-full bg-primary px-1 text-[10px] leading-tight font-bold text-white">
+                          C
                         </span>
-                      ) : null}
-                      {cell.flag === "violation" ? (
-                        <span aria-hidden className={`pointer-events-none absolute inset-px ring-[3px] ring-danger ring-inset ${isMonth ? "rounded-[7px]" : "rounded-[11px]"}`} />
-                      ) : null}
-                      {isSelected ? (
-                        <span aria-hidden className={`pointer-events-none absolute inset-px ring-[3px] ring-primary ring-inset ${isMonth ? "rounded-[7px]" : "rounded-[11px]"}`} />
                       ) : null}
                     </td>
                   );
@@ -177,16 +212,19 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, onC
               <tr key={duty}>
                 <th
                   scope="row"
-                  className={`sticky left-0 z-20 h-11 border-r border-b border-line bg-canvas pl-4 text-left text-[16px] font-bold text-ink-sub ${bottom} ${duty === "D" ? "border-t-2 border-t-grid" : ""}`}
+                  className={`sticky left-0 z-20 h-10 border-r border-b border-line bg-canvas pl-4 text-left text-[16px] font-bold text-ink-sub ${bottom} ${duty === "D" ? "border-t-2 border-t-grid" : ""}`}
                 >
-                  {duty} 인원
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className={`size-3.5 rounded-[4px] ${DUTY_STYLE[duty].cell.split(" ")[0]} ${DUTY_STYLE[duty].ring}`} />
+                    {duty} 인원
+                  </span>
                 </th>
                 {coverage.map((c, i) => {
                   const count = c.counts[duty];
                   return (
-                    <td key={days[i].date} className={`sticky z-10 h-11 border-r border-b border-line bg-white text-center ${bottom} ${duty === "D" ? "border-t-2 border-t-grid" : ""}`}>
+                    <td key={days[i].date} className={`sticky z-10 h-10 border-r border-b border-line text-center ${bottom} ${duty === "D" ? "border-t-2 border-t-grid" : ""} ${days[i].isToday ? "bg-primary-soft" : "bg-white"}`}>
                       {count ? (
-                        <ScheduleChip tone={count.actual < count.required ? "danger" : "ok"} shape="square">
+                        <ScheduleChip tone={count.actual < count.required ? "danger" : "gray"} shape="square">
                           {count.actual}/{count.required}
                         </ScheduleChip>
                       ) : (

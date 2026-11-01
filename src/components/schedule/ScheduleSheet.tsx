@@ -14,6 +14,7 @@ import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
+import ScheduleLegend from "./ScheduleLegend";
 import ScheduleShareButtons from "./ScheduleShareButtons";
 import ScheduleToolbar from "./ScheduleToolbar";
 
@@ -24,6 +25,8 @@ const POPOVER_HEIGHT = 170;
 // 위반 메시지 한 줄당 늘어나는 팝오버 높이 (위/아래 배치 계산용)
 const POPOVER_PROBLEM_LINE = 26;
 
+const NAV_BTN =
+  "flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden";
 
 // 제목 옆 근무표 상태 표시 (수간호사 화면)
 const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand" }> = {
@@ -31,6 +34,13 @@ const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand
   GENERATING: { label: "자동 생성 중", tone: "brand" },
   CONFIRMED: { label: "확정", tone: "brand" },
   ARCHIVED: { label: "지난 근무표", tone: "gray" },
+};
+
+// 고칠 수 없는 근무표일 때 시트 아래에 보여 줄 안내 (근무표 상태로 편집 가능 여부를 정한다, AGENTS.md 6.2)
+const READONLY_HINT: Partial<Record<ScheduleStatus, string>> = {
+  CONFIRMED: "고치려면 확정을 취소해 주세요",
+  GENERATING: "자동 생성 중에는 고칠 수 없어요",
+  ARCHIVED: "지난 근무표는 고칠 수 없어요",
 };
 
 // canManage: 수간호사만 true. 간호사는 확정된 근무표를 보기만 하므로 편집 도구와 확정 버튼을 숨긴다.
@@ -44,6 +54,8 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
   const [showEmptyGuide, setShowEmptyGuide] = useState(canManage && sheet.unassigned);
   const generation = useGenerationStart();
   const api = sheet.api;
+  const editable = canManage && api.editable;
+  const hint = editable ? "칸을 눌러 바로 고치면 자동으로 저장돼요" : canManage ? READONLY_HINT[api.status] : undefined;
 
   const closePopover = useCallback(() => setPopover(null), []);
 
@@ -106,51 +118,57 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
 
   return (
     <>
-      {/* 24인치(1920×1080)에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 위아래 여백과 줄 수를 줄였다. */}
+      {/* 24인치(1920×1080) 브라우저 창에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 머리 2줄 + 시트 + 범례 1줄로 둔다. */}
       <div className="flex min-h-0 w-full flex-1 flex-col">
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-[24px] border border-line bg-white px-5 py-4 shadow-card print:border-0 print:p-0 print:shadow-none">
-          <div className="flex min-h-[52px] flex-wrap items-center gap-x-6 gap-y-2">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[28px] leading-normal font-bold tracking-[-0.02em] text-ink">{sheet.title}</h2>
-              <Link href={prevHref} aria-label="이전" className="flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-white px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
+          {/* 1줄: 기간 이동 · 상태 · 보기 전환 / 공유 · 확정 */}
+          <div className="flex min-h-12 flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-1.5">
+              <Link href={prevHref} aria-label="이전" className={NAV_BTN}>
                 ‹
               </Link>
-              <Link href={nextHref} aria-label="다음" className="flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden">
+              <h2 className="min-w-[132px] px-1 text-center text-[28px] leading-normal font-bold tracking-[-0.02em] text-ink">{sheet.title}</h2>
+              <Link href={nextHref} aria-label="다음" className={NAV_BTN}>
                 ›
               </Link>
-              {canManage ? (
-                <span className="flex items-center gap-2 print:hidden">
-                  <ScheduleChip tone={STATUS_CHIP[api.status].tone}>{STATUS_CHIP[api.status].label}</ScheduleChip>
-                  <span className="text-[15px] font-medium text-ink-mute">칸을 눌러 바로 수정 · 자동 저장</span>
-                </span>
-              ) : null}
             </div>
-            <div className="flex items-center gap-3 print:hidden">
+            {canManage ? (
+              <span className="print:hidden">
+                <ScheduleChip tone={STATUS_CHIP[api.status].tone}>{STATUS_CHIP[api.status].label}</ScheduleChip>
+              </span>
+            ) : null}
+            <span aria-hidden className="h-7 w-px bg-line print:hidden" />
+            <div className="flex items-center gap-2 print:hidden">
               <ScheduleSegmented
                 options={viewOptions}
                 value={isMonth ? "month" : "week"}
                 ariaLabel="보기 전환"
-                itemClassName="w-24"
+                itemClassName="w-20"
               />
               {isMonth ? null : (
-                <ScheduleSegmented options={weekOptions} value={String(sheet.activeWeek)} ariaLabel="주 선택" />
+                <ScheduleSegmented options={weekOptions} value={String(sheet.activeWeek)} ariaLabel="주 선택" itemClassName="w-14" />
               )}
             </div>
-            <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport={canManage} />
-            {canManage ? (
-              <div className="ml-auto print:hidden">
-                <ScheduleBottomBar
-                  scheduleId={api.scheduleId}
-                  yearMonth={sheet.yearMonth}
-                  status={api.status}
-                  hardViolationCount={editor.hardViolationCount}
-                />
-              </div>
-            ) : null}
+            <div className="ml-auto flex items-center gap-3 print:hidden">
+              <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport={canManage} />
+              {canManage ? (
+                <>
+                  <span aria-hidden className="h-7 w-px bg-line" />
+                  <ScheduleBottomBar
+                    scheduleId={api.scheduleId}
+                    yearMonth={sheet.yearMonth}
+                    status={api.status}
+                    hardViolationCount={editor.hardViolationCount}
+                  />
+                </>
+              ) : null}
+            </div>
           </div>
+          {/* 2줄: 칸 고치기 도구 (수간호사) */}
           {canManage ? (
-            <div className="rounded-[18px] bg-canvas px-3 py-2 ring-1 ring-line ring-inset print:hidden">
+            <div className="rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
               <ScheduleToolbar
+                editable={editable}
                 brush={brush}
                 onBrushChange={setBrush}
                 canUndo={editor.canUndo}
@@ -175,10 +193,16 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
               days={sheet.days}
               rows={gridRows}
               coverage={editor.coverage}
-              selected={sheet.selectedCell}
-              onCellClick={canManage ? handleCellClick : undefined}
+              // 고르는 창이 열려 있으면 지금 바꾸는 칸을 버건디 테두리로 표시한다
+              selected={popover ? { row: popover.row, col: popover.col } : sheet.selectedCell}
+              onCellClick={editable ? handleCellClick : undefined}
               onScroll={closePopover}
             />
+            {checkOnly && gridRows.length === 0 ? (
+              <p className="pointer-events-none absolute top-24 left-1/2 -translate-x-1/2 rounded-full bg-canvas px-5 py-2.5 text-[17px] font-bold text-ink-sub ring-1 ring-line ring-inset">
+                확인이 필요한 칸이 없어요
+              </p>
+            ) : null}
             {showEmptyGuide ? (
               <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[24px] border border-line bg-white p-6 text-center shadow-pop">
                 <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
@@ -207,6 +231,12 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
                 </div>
               </div>
             ) : null}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
+            {hint ? <p className="text-[15px] font-medium text-ink-mute print:hidden">{hint}</p> : null}
+            <div className="ml-auto">
+              <ScheduleLegend isMonth={isMonth} canManage={editable} hasToday={sheet.days.some((d) => d.isToday)} />
+            </div>
           </div>
         </section>
       </div>
