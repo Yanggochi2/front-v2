@@ -18,6 +18,7 @@ import type {
   CoverageStatus,
   DayTone,
   ScheduleDay,
+  ScheduleIssue,
   ScheduleRow,
   ScheduleSheetData,
   SchedulePageData,
@@ -101,8 +102,11 @@ export function applyViolationFlags(rows: ScheduleRow[], dates: string[], violat
   }));
 }
 
-export function countHardViolations(violations: ApiViolation[]): number {
-  return violations.filter((v) => v.severity === "HARD").length;
+// 확정을 막는 규칙 위반(HARD) 목록
+export function toIssues(violations: ApiViolation[]): ScheduleIssue[] {
+  return violations
+    .filter((v) => v.severity === "HARD")
+    .map((v) => ({ id: v.id, nurseKey: v.nurseId, date: v.date, message: v.message }));
 }
 
 function toSheet(
@@ -113,6 +117,7 @@ function toSheet(
   sortInfo: Map<string, { role?: NurseRole; careerMonths?: number | null }>,
   view: "week" | "month",
   activeWeek: number,
+  manage: boolean,
 ): ScheduleSheetData {
   const { yearMonth: nowYm, day } = todayKst();
   const all = monthDates(schedule.yearMonth);
@@ -147,7 +152,9 @@ function toSheet(
     title: sheetTitle(view, schedule.yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, holidays)),
     rows: applyViolationFlags(rows, dates, violations),
-    coverage: view === "month" ? null : toCoverageStatuses(schedule.coverage, dates),
+    // 수간호사는 월간에서도 그날 인원을 보며 고친다. 간호사의 월간 보기는 지금처럼 인원 행 없이 둔다.
+    coverage: view === "month" && !manage ? null : toCoverageStatuses(schedule.coverage, dates),
+    issues: toIssues(violations),
     selectedCell: null,
     yearMonth: schedule.yearMonth,
     activeWeek,
@@ -160,7 +167,6 @@ function toSheet(
       dates,
       editable: schedule.status === "DRAFT",
       status: schedule.status,
-      hardViolationCount: countHardViolations(violations),
     },
   };
 }
@@ -202,7 +208,7 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
   }
   const [holidays, sortInfo] = await Promise.all([holidaysJob, sortInfoJob]);
   const view = params.view === "month" ? "month" : "week";
-  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, approvedOff, sortInfo, view, week) };
+  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, approvedOff, sortInfo, view, week, !!params.manage) };
 }
 
 // 서버에 연결하지 못했을 때 보여 줄 빈 근무표 틀. 날짜 열은 실제 오늘 날짜로 만들고 간호사 행은 없다.
@@ -220,13 +226,14 @@ export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetD
     days: dates.map((d) => toDay(d, today, new Map())),
     rows: [],
     coverage: null,
+    issues: [],
     selectedCell: null,
     yearMonth,
     activeWeek,
     weekCount,
     lastSavedLabel: "-",
     unassigned: false,
-    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT", hardViolationCount: 0 },
+    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT" },
   };
 }
 

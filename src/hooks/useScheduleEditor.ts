@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/apiClient";
-import { applyViolationFlags, countHardViolations, patchScheduleCells, toCoverageStatuses } from "@/services/scheduleApi";
+import { applyViolationFlags, patchScheduleCells, toCoverageStatuses, toIssues } from "@/services/scheduleApi";
 import type { CoverageStatus, DutyCode, EditableDutyCode, ScheduleRow, ScheduleSheetData } from "@/types/schedule.type";
 
 type HistoryItem = { row: number; col: number; prev: DutyCode | null; next: DutyCode | null };
@@ -26,7 +26,7 @@ export function useScheduleEditor(sheet: ScheduleSheetData) {
   const api = sheet.api;
   const [rows, setRows] = useState<ScheduleRow[]>(sheet.rows);
   const [coverage, setCoverage] = useState<CoverageStatus[] | null>(sheet.coverage);
-  const [hardViolationCount, setHardViolationCount] = useState(api.hardViolationCount);
+  const [issues, setIssues] = useState(sheet.issues);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [future, setFuture] = useState<HistoryItem[]>([]);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export function useScheduleEditor(sheet: ScheduleSheetData) {
         versionRef.current = res.version;
         setCoverage((prev) => (prev ? toCoverageStatuses(res.coverage, api.dates) : prev));
         setRows((prev) => applyViolationFlags(prev, api.dates, res.violations));
-        setHardViolationCount(countHardViolations(res.violations));
+        setIssues(toIssues(res.violations));
         setSaveError(null);
         return true;
       } catch (e) {
@@ -133,7 +133,7 @@ export function useScheduleEditor(sheet: ScheduleSheetData) {
   return {
     rows,
     coverage,
-    hardViolationCount,
+    issues,
     saveError,
     canUndo: api.editable && history.length > 0,
     canRedo: api.editable && future.length > 0,

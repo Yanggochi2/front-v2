@@ -32,6 +32,14 @@ export type ScheduleDay = {
   holidayName?: string; // 공휴일이면 이름 (이름이 없으면 "공휴일")
 };
 
+// 규칙 위반(HARD) 한 건. 메시지는 서버 응답을 그대로 쓴다 (AGENTS.md 6.2).
+export type ScheduleIssue = {
+  id: string;
+  nurseKey: string | null; // null이면 병동 단위 위반(그날 인원 부족 등)
+  date: string | null; // YYYY-MM-DD
+  message: string;
+};
+
 export type ScheduleRow = {
   nurseKey: string; // nurseId
   name: string;
@@ -48,7 +56,10 @@ export type ScheduleSheetData = {
   title: string;
   days: ScheduleDay[];
   rows: ScheduleRow[];
-  coverage: CoverageStatus[] | null; // 월별 보기에는 커버리지 행이 없다
+  coverage: CoverageStatus[] | null; // 간호사의 월별 보기에는 커버리지 행이 없다
+  // 작성 중 근무표의 규칙 위반(HARD). 병동 단위 위반(인원 미달 등)도 들어 있고, 0건이어야 확정할 수 있다.
+  // 위반 목록을 받지 않는 상태(확정본·간호사 화면·서버 연결 실패)면 빈 배열
+  issues: ScheduleIssue[];
   selectedCell: { row: number; col: number } | null;
   yearMonth: string;
   activeWeek: number;
@@ -64,7 +75,6 @@ export type ScheduleSheetApiState = {
   dates: string[]; // 열 순서대로의 YYYY-MM-DD
   editable: boolean; // DRAFT일 때만 true
   status: ScheduleStatus;
-  hardViolationCount: number; // 병동 단위 위반(인원 미달 등)까지 센다. 0이어야 확정할 수 있다
 };
 
 // 근무표 행 정렬. default는 서버가 준 순서

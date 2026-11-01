@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { movePeriod, scheduleHref } from "@/lib/schedulePeriod";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleChip from "@/components/ui/ScheduleChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useScheduleEditor } from "@/hooks/useScheduleEditor";
 import { compareNurses } from "@/lib/nurseSort";
-import type { EditableDutyCode, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
+import type { EditableDutyCode, ScheduleIssue, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
+import ScheduleIssues from "./ScheduleIssues";
 import ScheduleLegend from "./ScheduleLegend";
 import ScheduleShareButtons from "./ScheduleShareButtons";
 import ScheduleToolbar from "./ScheduleToolbar";
@@ -21,9 +23,20 @@ import ScheduleToolbar from "./ScheduleToolbar";
 type Popover = { row: number; col: number; top: number; left: number; above: boolean };
 
 const POPOVER_WIDTH = 386;
-const POPOVER_HEIGHT = 170;
+const POPOVER_HEIGHT = 196;
 // 위반 메시지 한 줄당 늘어나는 팝오버 높이 (위/아래 배치 계산용)
 const POPOVER_PROBLEM_LINE = 26;
+
+// 고르는 창이 열려 있을 때 누르면 바로 그 근무로 바꾸는 키. 한글 입력 상태여도 같은 자리 키로 받는다.
+const KEY_DUTY: Record<string, EditableDutyCode> = { KeyD: "D", KeyE: "E", KeyN: "N", KeyO: "O" };
+
+// 칸 바꾸기(브러시) 중 안내. 받침에 따라 조사가 달라 근무마다 적는다.
+const BRUSH_HINT: Record<EditableDutyCode, string> = {
+  D: "누르는 칸마다 D 데이로 바뀌어요",
+  E: "누르는 칸마다 E 이브닝으로 바뀌어요",
+  N: "누르는 칸마다 N 나이트로 바뀌어요",
+  O: "누르는 칸마다 OFF 휴무로 바뀌어요",
+};
 
 const NAV_BTN =
   "flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden";
@@ -36,32 +49,58 @@ const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand
   ARCHIVED: { label: "지난 근무표", tone: "gray" },
 };
 
-// 고칠 수 없는 근무표일 때 시트 아래에 보여 줄 안내 (근무표 상태로 편집 가능 여부를 정한다, AGENTS.md 6.2)
-const READONLY_HINT: Partial<Record<ScheduleStatus, string>> = {
-  CONFIRMED: "고치려면 확정을 취소해 주세요",
+// 고칠 수 없는 근무표일 때 도구 줄에 보여 줄 안내 (근무표 상태로 편집 가능 여부를 정한다, AGENTS.md 6.2)
+const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
+  CONFIRMED: "간호사들에게 공개된 근무표예요. 고치려면 확정을 취소해 주세요",
   GENERATING: "자동 생성 중에는 고칠 수 없어요",
   ARCHIVED: "지난 근무표는 고칠 수 없어요",
 };
+const OFFLINE_NOTE = "서버에 연결되면 고칠 수 있어요";
 
 // canManage: 수간호사만 true. 간호사는 확정된 근무표를 보기만 하므로 편집 도구와 확정 버튼을 숨긴다.
 export default function ScheduleSheet({ sheet, canManage = true }: { sheet: ScheduleSheetData; canManage?: boolean }) {
+  const router = useRouter();
   const editor = useScheduleEditor(sheet);
   const { rows, setDuty } = editor;
   const [brush, setBrush] = useState<EditableDutyCode | null>(null);
   const [checkOnly, setCheckOnly] = useState(false);
   const [sort, setSort] = useState<ScheduleRowSort>("skill");
   const [popover, setPopover] = useState<Popover | null>(null);
+  // 위반 목록에서 고른 날(열). 다음에 아무 데나 누르거나 Esc를 누르면 지운다.
+  const [spotCol, setSpotCol] = useState<number | null>(null);
   const [showEmptyGuide, setShowEmptyGuide] = useState(canManage && sheet.unassigned);
   const generation = useGenerationStart();
   const api = sheet.api;
   const editable = canManage && api.editable;
-  const hint = editable ? "칸을 눌러 바로 고치면 자동으로 저장돼요" : canManage ? READONLY_HINT[api.status] : undefined;
+  const hint = !editable
+    ? undefined
+    : brush
+      ? `${BRUSH_HINT[brush]}. Esc를 누르면 멈춰요`
+      : "칸을 누르면 근무를 고를 수 있어요. 바꾸면 바로 저장돼요";
+  const names = useMemo(() => new Map(rows.map((r) => [r.nurseKey, r.name])), [rows]);
 
   const closePopover = useCallback(() => setPopover(null), []);
 
+  function pick(code: EditableDutyCode) {
+    if (!popover) return;
+    setDuty(popover.row, popover.col, code);
+    closePopover();
+  }
+  // 키 입력 처리는 창이 열릴 때 한 번 붙이므로, 최신 pick을 ref로 넘긴다.
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  });
+
   useEffect(() => {
     if (!popover) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closePopover();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return closePopover();
+      const code = KEY_DUTY[e.code];
+      if (!code || e.ctrlKey || e.metaKey || e.altKey) return;
+      e.preventDefault();
+      pickRef.current(code);
+    };
     const onDown = (e: PointerEvent) => {
       if (!(e.target as HTMLElement).closest('[role="dialog"], table button')) closePopover();
     };
@@ -75,12 +114,27 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     };
   }, [popover, closePopover]);
 
-  function handleCellClick(row: number, col: number, el: HTMLElement) {
-    if (brush) {
-      setDuty(row, col, brush);
-      closePopover();
-      return;
-    }
+  // 칸 바꾸기(브러시)는 Esc로 멈춘다. 고르는 창이 열려 있으면 창부터 닫는다.
+  useEffect(() => {
+    if (!brush || popover) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setBrush(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [brush, popover]);
+
+  useEffect(() => {
+    if (spotCol === null) return;
+    const clear = () => setSpotCol(null);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear();
+    window.addEventListener("pointerdown", clear);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", clear);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [spotCol]);
+
+  function openPopover(row: number, col: number, el: HTMLElement) {
     // 화면 비율(zoom)이 걸려 있어도 위치가 맞도록, 화면 기준 좌표를 비율로 나눠 쓴다.
     const rect = el.getBoundingClientRect();
     const f = el.offsetWidth ? rect.width / el.offsetWidth : 1;
@@ -88,6 +142,36 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     const above = rect.bottom + (8 + height) * f > window.innerHeight;
     const left = Math.max(8, Math.min(rect.left + rect.width / 2 - (POPOVER_WIDTH * f) / 2, window.innerWidth - (POPOVER_WIDTH + 8) * f));
     setPopover({ row, col, left: left / f, above, top: (above ? rect.top - 8 * f : rect.bottom + 8 * f) / f });
+  }
+
+  function handleCellClick(row: number, col: number, el: HTMLElement) {
+    if (brush) {
+      setDuty(row, col, brush);
+      closePopover();
+      return;
+    }
+    openPopover(row, col, el);
+  }
+
+  // 위반 목록에서 고른 항목을 시트에서 찾아 준다. 간호사 위반은 그 칸의 고르는 창을 열고,
+  // 병동 위반(인원 부족 등)은 그날 열을 짚는다. 주간 보기에서 다른 주의 날이면 그 주로 옮긴다.
+  function focusIssue(issue: ScheduleIssue) {
+    if (!issue.date) return;
+    const col = api.dates.indexOf(issue.date);
+    if (col < 0) {
+      router.push(scheduleHref("week", { yearMonth: sheet.yearMonth, week: Math.ceil(Number(issue.date.slice(8)) / 7) }));
+      return;
+    }
+    const row = issue.nurseKey ? rows.findIndex((r) => r.nurseKey === issue.nurseKey) : -1;
+    const el = row >= 0 && rows[row].cells[col].editable !== false ? document.querySelector<HTMLElement>(`[data-cell="${row}:${col}"]`) : null;
+    if (!el || !editable) {
+      setSpotCol(col);
+      return;
+    }
+    closePopover();
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // 시트가 스크롤되면 고르는 창이 닫히므로 스크롤이 끝난 다음 프레임에 연다.
+    requestAnimationFrame(() => requestAnimationFrame(() => openPopover(row, col, el)));
   }
 
   const gridRows = useMemo(() => {
@@ -118,8 +202,9 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
 
   return (
     <>
-      {/* 24인치(1920×1080) 브라우저 창에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 머리 2줄 + 시트 + 범례 1줄로 둔다. */}
-      <div className="flex min-h-0 w-full flex-1 flex-col">
+      {/* 24인치(1920×1080) 브라우저 창에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 머리 2줄 + 시트 + 범례 1줄로 둔다.
+          인쇄는 A4 가로 한 장에 30명·하단 인원 행·범례가 함께 들어가도록 86%로 줄인다. */}
+      <div className="flex min-h-0 w-full flex-1 flex-col print:[zoom:0.86]">
         <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-white px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
           {/* 1줄: 기간 이동 · 상태 · 보기 전환 / 공유 · 확정 */}
           <div className="flex min-h-12 flex-wrap items-center gap-x-4 gap-y-2">
@@ -154,21 +239,25 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
               {canManage ? (
                 <>
                   <span aria-hidden className="h-7 w-px bg-line" />
+                  {api.status === "DRAFT" && editor.issues.length > 0 ? (
+                    <ScheduleIssues issues={editor.issues} names={names} onPick={focusIssue} />
+                  ) : null}
                   <ScheduleBottomBar
                     scheduleId={api.scheduleId}
                     yearMonth={sheet.yearMonth}
                     status={api.status}
-                    hardViolationCount={editor.hardViolationCount}
+                    hardViolationCount={editor.issues.length}
                   />
                 </>
               ) : null}
             </div>
           </div>
-          {/* 2줄: 칸 고치기 도구 (수간호사) */}
+          {/* 2줄: 칸 고치기 도구 (수간호사). 고칠 수 없는 근무표면 그 이유와 정렬만 */}
           {canManage ? (
             <div className="rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
               <ScheduleToolbar
                 editable={editable}
+                readOnlyNote={READONLY_NOTE[api.status] ?? OFFLINE_NOTE}
                 brush={brush}
                 onBrushChange={setBrush}
                 canUndo={editor.canUndo}
@@ -195,6 +284,8 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
               coverage={editor.coverage}
               // 고르는 창이 열려 있으면 지금 바꾸는 칸을 버건디 테두리로 표시한다
               selected={popover ? { row: popover.row, col: popover.col } : sheet.selectedCell}
+              spotCol={spotCol}
+              painting={!!brush}
               onCellClick={editable ? handleCellClick : undefined}
               onScroll={closePopover}
             />
@@ -233,7 +324,9 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
-            {hint ? <p className="text-[15px] font-medium text-ink-mute print:hidden">{hint}</p> : null}
+            {hint ? (
+              <p className={`text-[15px] print:hidden ${brush ? "font-bold text-primary" : "font-medium text-ink-mute"}`}>{hint}</p>
+            ) : null}
             <div className="ml-auto">
               <ScheduleLegend isMonth={isMonth} canManage={editable} hasToday={sheet.days.some((d) => d.isToday)} />
             </div>
@@ -245,11 +338,10 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
           top={popover.top}
           left={popover.left}
           above={popover.above}
+          title={`${rows[popover.row].name} · ${Number(sheet.yearMonth.slice(5))}월 ${sheet.days[popover.col].date}일 (${sheet.days[popover.col].weekday})`}
+          current={rows[popover.row].cells[popover.col].duty}
           problems={rows[popover.row].cells[popover.col].violations}
-          onPick={(code) => {
-            setDuty(popover.row, popover.col, code);
-            closePopover();
-          }}
+          onPick={pick}
         />
       ) : null}
     </>

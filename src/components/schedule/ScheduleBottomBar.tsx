@@ -15,7 +15,7 @@ type Props = {
   scheduleId: string; // 비어 있으면 서버에 연결하지 못한 상태
   yearMonth: string;
   status: ScheduleStatus;
-  hardViolationCount: number;
+  hardViolationCount: number; // 0보다 크면 확정 버튼을 막는다
 };
 
 // 시트 아래 CTA. 화면 높이 안에 시트가 다 들어오도록 고정 배치 대신 흐름 안에 둔다.
@@ -50,23 +50,9 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
     router.refresh();
   }
 
+  // 남은 위반 수(ScheduleIssues)와 공개 안내(도구 줄)는 시트 머리에서 따로 보여 준다.
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-      {status === "DRAFT" && blocked ? (
-        <p
-          title="규칙 위반을 모두 고쳐야 확정할 수 있어요"
-          className="flex items-center gap-2 rounded-full bg-danger-soft py-1.5 pr-4 pl-1.5 text-[16px] font-bold text-danger ring-1 ring-danger/20 ring-inset"
-        >
-          <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-danger text-[14px] text-white">!</span>
-          규칙 위반 {hardViolationCount}건이 남았어요
-        </p>
-      ) : null}
-      {status === "CONFIRMED" ? (
-        <p className="flex items-center gap-2 rounded-full bg-primary-soft py-1.5 pr-4 pl-1.5 text-[16px] font-bold text-primary ring-1 ring-primary/20 ring-inset">
-          <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-primary text-[14px] text-white">✓</span>
-          간호사들에게 공개된 근무표예요
-        </p>
-      ) : null}
       <div className="flex items-center gap-3">
         {status === "DRAFT" ? (
           <>
