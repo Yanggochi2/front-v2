@@ -3,7 +3,7 @@ import type { StatsData } from "@/types/stats.type";
 import { getScheduleByYearMonth } from "./scheduleApi";
 
 // 통계 전용 API는 없다. 그 달 근무표 응답의 statistics(간호사별 집계)를 쓴다.
-// 수간호사는 전원, 일반 간호사는 본인 행만 온다. 그 달 근무표가 없으면(404) 빈 결과.
+// 그 달 근무표가 없으면(404) 빈 결과.
 export async function getStats(yearMonth?: string): Promise<StatsData> {
   const now = new Date();
   const ym = yearMonth ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -18,7 +18,7 @@ export async function getStats(yearMonth?: string): Promise<StatsData> {
       eveningCount: s.E,
       nightCount: s.N,
       offCount: s.O,
-      offTarget: s.offTarget ?? 0,
+      offTarget: s.offTarget,
       weekendCount: s.weekendWork,
       holidayCount: s.holidayWork,
     }));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import ScheduleButton from "@/components/ui/ScheduleButton";
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
   error: string | null;
   onConfirm: (reason: string) => void;
   onClose: () => void;
+  children?: ReactNode; // 설명 아래에 넣을 선택 항목
 };
 
 // 근무표 확정 / 확정 취소 확인 창
@@ -25,6 +26,7 @@ export default function ScheduleConfirmDialog({
   error,
   onConfirm,
   onClose,
+  children,
 }: Props) {
   const [reason, setReason] = useState("");
   const needsReason = reasonLabel !== undefined;
@@ -47,6 +49,7 @@ export default function ScheduleConfirmDialog({
           {title}
         </h2>
         <p className="text-[17px] font-medium text-ink-sub">{description}</p>
+        {children}
         {needsReason ? (
           <textarea
             value={reason}

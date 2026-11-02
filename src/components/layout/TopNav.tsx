@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useNavModel } from "@/hooks/useNavModel";
 import type { ShellInfo } from "@/types/shell.type";
 
 // 사이드바를 닫았을 때의 상단 바. 메뉴 목록은 보이지 않고 사이드바를 다시 여는 버튼만 둔다.
 export default function TopNav({ shell, onOpen }: { shell: ShellInfo; onOpen: () => void }) {
-  const nav = useNavModel(shell);
-
   return (
     <header className="flex h-[72px] shrink-0 items-center gap-6 border-b border-line bg-white px-6">
       <button
@@ -25,11 +22,9 @@ export default function TopNav({ shell, onOpen }: { shell: ShellInfo; onOpen: ()
         <span className="text-[22px] font-bold tracking-[-0.02em] text-ink">Ottugi</span>
       </Link>
       <div className="min-w-0 flex-1" />
-      <Link href={nav.profileHref} className="flex shrink-0 items-center gap-3 text-[16px] font-medium text-ink-sub">
-        {nav.userName} {nav.role === "HEAD_NURSE" ? "수간호사" : "간호사"}
-        <span aria-hidden className="flex size-10 items-center justify-center rounded-full bg-primary-soft text-[17px] font-bold text-primary">
-          {nav.userName.slice(0, 1)}
-        </span>
+      {/* 로그인·프로필이 없어(10/26 계약) 지금 관리하는 병동을 보여 준다 */}
+      <Link href="/ward-settings" className="flex shrink-0 items-center gap-2 text-[16px] font-medium text-ink-sub">
+        {shell.hospitalName} <span className="font-bold text-ink">{shell.wardName}</span>
       </Link>
     </header>
   );

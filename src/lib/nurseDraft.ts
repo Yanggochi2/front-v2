@@ -6,6 +6,8 @@ export function emptyNurseDraft(name = ""): NurseDraft {
     name,
     hireYear: "",
     dutyRole: "GENERAL",
+    isPreceptor: false,
+    preceptorOf: [],
     careerYears: "0",
     careerMonths: "0",
     skill: 3,
@@ -20,8 +22,10 @@ export function toNurseCreate(d: NurseDraft): NurseCreate {
     name: d.name.trim(),
     dutyRole: d.dutyRole,
     status: d.status,
-    // 명세서의 joinedAt은 날짜라서 입사년도를 그 해 1월 1일로 보낸다
-    joinedAt: `${d.hireYear}-01-01`,
+    joinedYear: Number(d.hireYear),
+    isPreceptor: d.isPreceptor,
+    // 프리셉터가 아니면 담당 신입을 비운다 (아니면 422 INVALID_PRECEPTOR)
+    preceptorOf: d.isPreceptor ? d.preceptorOf : [],
     careerMonths: Number(d.careerYears || 0) * 12 + Number(d.careerMonths || 0),
     skillLevel: d.skill,
     affiliationStart: d.periodStart,
@@ -35,7 +39,11 @@ export function toNursePatch(initial: NurseDraft, current: NurseDraft): Partial<
   const after = toNurseCreate(current);
   const patch: Partial<NurseCreate> = {};
   (Object.keys(after) as (keyof NurseCreate)[]).forEach((key) => {
-    if (after[key] !== before[key]) Object.assign(patch, { [key]: after[key] });
+    // 담당 신입 목록은 배열이라 순서를 맞춰 값으로 비교한다
+    const same = Array.isArray(after[key])
+      ? JSON.stringify([...(after[key] as string[])].sort()) === JSON.stringify([...((before[key] as string[]) ?? [])].sort())
+      : after[key] === before[key];
+    if (!same) Object.assign(patch, { [key]: after[key] });
   });
   return patch;
 }
@@ -43,8 +51,10 @@ export function toNursePatch(initial: NurseDraft, current: NurseDraft): Partial<
 export function toNurseDraft(nurse: NurseDetail): NurseDraft {
   return {
     name: nurse.name,
-    hireYear: nurse.joinedAt.slice(0, 4),
+    hireYear: String(nurse.joinedYear),
     dutyRole: nurse.dutyRole ?? "GENERAL",
+    isPreceptor: nurse.isPreceptor ?? false,
+    preceptorOf: nurse.preceptorOf,
     careerYears: String(nurse.careerYears ?? 0),
     careerMonths: String(nurse.careerMonths ?? 0),
     skill: nurse.skill ?? 3,

@@ -7,11 +7,8 @@ import OnboardingButton from "@/components/ui/OnboardingButton";
 import { useSubmit } from "@/hooks/useSubmit";
 import { getEntryPath, login } from "@/services/authApi";
 import AuthField from "./AuthField";
-import SocialLoginButtons from "./SocialLoginButtons";
 
-type Props = { joinCode?: string };
-
-export default function LoginForm({ joinCode }: Props) {
+export default function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,15 +23,13 @@ export default function LoginForm({ joinCode }: Props) {
     let next = "/schedule";
     const ok = await submit(async () => {
       await login({ email: email.trim(), password });
-      next = await getEntryPath(joinCode);
+      next = await getEntryPath();
     });
     if (ok) {
       router.replace(next);
       router.refresh();
     }
   }
-
-  const signupHref = joinCode ? `/signup?code=${encodeURIComponent(joinCode)}` : "/signup";
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -66,11 +61,10 @@ export default function LoginForm({ joinCode }: Props) {
       </OnboardingButton>
       <p className="text-center text-[17px] font-medium text-ink-sub">
         처음이세요?{" "}
-        <Link href={signupHref} className="font-bold text-primary underline-offset-4 hover:underline">
+        <Link href="/signup" className="font-bold text-primary underline-offset-4 hover:underline">
           회원가입
         </Link>
       </p>
-      <SocialLoginButtons />
       {/* TODO: 비밀번호 찾기는 API 확정 후 */}
     </form>
   );

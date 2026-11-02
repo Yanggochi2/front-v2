@@ -26,7 +26,7 @@ export default function ScheduleCellPopover({ top, left, above, title, current, 
         <p className="text-[14px] font-medium text-ink-sub">어떤 근무로 바꿀까요?</p>
       </div>
       {problems?.length ? (
-        <ul className="flex max-w-[354px] flex-col gap-1 rounded-[12px] bg-danger-soft px-3 py-2">
+        <ul className="flex max-w-[438px] flex-col gap-1 rounded-[12px] bg-danger-soft px-3 py-2">
           {problems.map((m) => (
             <li key={m} className="text-[15px] font-bold text-danger">
               · {m}

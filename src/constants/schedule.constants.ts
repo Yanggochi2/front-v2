@@ -12,6 +12,3 @@ export const GENERATION_STAGES: { stage: string; title: string }[] = [
   { stage: "OPTIMIZING", title: "근무 배치" },
   { stage: "COMPLETED", title: "완료" },
 ];
-
-
-// TODO(🔶 ED 교육 듀티): 미확정이라 브러시·팝오버에 넣지 않는다.

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ScheduleButton from "@/components/ui/ScheduleButton";
+import ScheduleToggle from "@/components/ui/ScheduleToggle";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useSubmit } from "@/hooks/useSubmit";
 import { cancelScheduleConfirmation, confirmSchedule, getScheduleViolations } from "@/services/scheduleApi";
@@ -16,21 +17,24 @@ type Props = {
   yearMonth: string;
   status: ScheduleStatus;
   hardViolationCount: number; // 0보다 크면 확정 버튼을 막는다
+  keepEnteredDefault: boolean; // 다시 짜기 창의 "넣어 둔 칸 지키기" 처음 값
 };
 
 // 시트 아래 CTA. 화면 높이 안에 시트가 다 들어오도록 고정 배치 대신 흐름 안에 둔다.
-export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardViolationCount }: Props) {
+export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardViolationCount, keepEnteredDefault }: Props) {
   const router = useRouter();
   const { submit, loading, error, setError } = useSubmit();
   const generation = useGenerationStart();
   // 같은 확정 시도는 같은 Idempotency-Key를 쓴다. 창을 열 때 만든다.
   const [dialog, setDialog] = useState<{ kind: DialogKind; key: string } | null>(null);
+  const [keepEntered, setKeepEntered] = useState(keepEnteredDefault);
   const offline = scheduleId === "";
   const blocked = hardViolationCount > 0;
 
   function open(kind: DialogKind) {
     setError(null);
     generation.setError(null);
+    setKeepEntered(keepEnteredDefault);
     setDialog({ kind, key: crypto.randomUUID() });
   }
 
@@ -85,7 +89,7 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
       {dialog?.kind === "confirm" ? (
         <ScheduleConfirmDialog
           title="근무표를 확정할까요?"
-          description="확정하면 간호사들에게 공개되고 알림이 가요. 확정한 뒤에는 고칠 수 없고, 고치려면 확정을 취소해야 해요."
+          description="확정하면 공유 링크를 만들어 간호사들에게 보여 줄 수 있어요. 확정한 뒤에는 고칠 수 없고, 고치려면 확정을 취소해야 해요."
           confirmLabel="확정하기"
           busy={loading}
           error={error}
@@ -96,18 +100,24 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
       {dialog?.kind === "regenerate" ? (
         <ScheduleConfirmDialog
           title="자동으로 다시 짤까요?"
-          description="지금 근무표를 새로 짠 결과로 바꿔요. 직접 고친 칸도 바뀌어요. 연차는 그대로 남아요."
+          description={
+            keepEntered
+              ? "근무가 들어 있는 칸은 그대로 두고 빈 칸만 채워요. 연차·교육도 그대로 남아요."
+              : "연차·교육만 남기고 나머지 칸을 모두 새로 짜요. 직접 넣은 오프도 바뀌어요."
+          }
           confirmLabel="다시 짜기"
           busy={generation.loading}
           error={generation.error}
-          onConfirm={() => generation.start(yearMonth)}
+          onConfirm={() => generation.start(yearMonth, keepEntered)}
           onClose={() => setDialog(null)}
-        />
+        >
+          <ScheduleToggle checked={keepEntered} onChange={setKeepEntered} label="넣어 둔 근무는 그대로 두기 (종이 달력 오프 등)" />
+        </ScheduleConfirmDialog>
       ) : null}
       {dialog?.kind === "cancel" ? (
         <ScheduleConfirmDialog
           title="확정을 취소할까요?"
-          description="취소하면 다시 고칠 수 있는 상태가 되고, 간호사들에게 취소 알림과 사유가 가요."
+          description="취소하면 다시 고칠 수 있는 상태가 되고, 만들어 둔 공유 링크는 더 이상 열리지 않아요. 다시 확정한 뒤 새 링크를 만들어 주세요."
           confirmLabel="확정 취소"
           reasonLabel="취소 사유"
           busy={loading}

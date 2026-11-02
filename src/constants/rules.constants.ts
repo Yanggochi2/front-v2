@@ -3,10 +3,8 @@ import type { RuleFilter } from "@/types/rules.type";
 // 🔶 미확정 규칙 값 모음. 확정되면 서버 응답으로 대체한다.
 // TODO(🔶 RULE-02) 연속 나이트 최대 일수 (임시 3일)
 export const MAX_CONSECUTIVE_NIGHT_DAYS = 3;
-// TODO(🔶 RULE-04) OFF 목표 계산식 (주휴일 포함 여부에 따라 4~5일 차이, 임시: 공휴일 수 + 1)
-export const OFF_TARGET_FORMULA_LABEL = "공휴일 수 + 1";
-// TODO(🔶 SCH-10) 통계 표의 OFF 목표 개수 (임시 12)
-export const OFF_TARGET_DAYS = 12;
+// 월 OFF 목표 자동값의 계산식 (10/26 미팅: 주말 + 공휴일 + 1일). 값은 서버가 계산한다 (off-targets autoCount).
+export const OFF_TARGET_FORMULA_LABEL = "주말·공휴일 + 1일";
 // 하루 필요 인원 기본값 D 7 · E 5 · N 5 (클라이언트 기준). 병동 개설·병동 설정·규칙 템플릿이 같이 쓴다.
 // TODO(🔶 RULE-01) 평일/주말/공휴일 구분은 미확정이라 단일 값으로 둔다.
 export const REQUIRED_STAFF_PER_DAY = { D: 7, E: 5, N: 5 } as const;

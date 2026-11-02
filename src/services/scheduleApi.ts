@@ -10,8 +10,6 @@ import type {
   ApiViolation,
   ApiViolationQuery,
 } from "@/types/scheduleApi.type";
-import { getNurseSortInfoMap } from "./nursesApi";
-import { getApprovedOffKeys } from "./requestsApi";
 import { getHolidays } from "./rulesApi";
 import type {
   CoverageDuty,
@@ -24,7 +22,6 @@ import type {
   SchedulePageData,
   SchedulePageParams,
 } from "@/types/schedule.type";
-import type { NurseRole } from "@/types/nurses.type";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const SCHEDULES = "/wards/me/schedules";
@@ -32,7 +29,7 @@ const SCHEDULES = "/wards/me/schedules";
 // ---- 매핑 (API -> UI 타입) ----
 
 // holidays: 날짜 → 공휴일 이름
-function toDay(date: string, today: string, holidays: Map<string, string>): ScheduleDay {
+export function toDay(date: string, today: string, holidays: Map<string, string>): ScheduleDay {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   const holidayName = holidays.get(date);
   const tone: DayTone =
@@ -113,11 +110,8 @@ function toSheet(
   schedule: ApiSchedule,
   violations: ApiViolation[],
   holidays: Map<string, string>,
-  approvedOff: Set<string>, // "간호사id|YYYY-MM-DD"
-  sortInfo: Map<string, { role?: NurseRole; careerMonths?: number | null }>,
   view: "week" | "month",
   activeWeek: number,
-  manage: boolean,
 ): ScheduleSheetData {
   const { yearMonth: nowYm, day } = todayKst();
   const all = monthDates(schedule.yearMonth);
@@ -131,9 +125,9 @@ function toSheet(
       nurseKey: n.id,
       name: n.name,
       group: n.skillGroup ?? undefined,
-      role: sortInfo.get(n.id)?.role,
+      role: n.role,
       dutyRole: n.dutyRole,
-      careerMonths: n.careerMonths ?? sortInfo.get(n.id)?.careerMonths ?? undefined,
+      careerMonths: n.careerMonths ?? undefined,
       cells: dates.map((d) => {
         const c = cellMap.get(`${n.id}|${d}`);
         // 칸이 없으면 소속 기간 밖으로 보고 편집 불가로 둔다 (추측).
@@ -141,7 +135,6 @@ function toSheet(
           duty: c?.dutyCode ?? null,
           editable: c ? c.editable : false,
           charge: c?.isCharge || undefined,
-          approvedOff: approvedOff.has(`${n.id}|${d}`) || undefined,
         };
       }),
     })),
@@ -149,24 +142,27 @@ function toSheet(
 
   return {
     view,
+    defaultSort: schedule.defaultSort === "name" ? "name" : "skill",
     title: sheetTitle(view, schedule.yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, holidays)),
     rows: applyViolationFlags(rows, dates, violations),
-    // 수간호사는 월간에서도 그날 인원을 보며 고친다. 간호사의 월간 보기는 지금처럼 인원 행 없이 둔다.
-    coverage: view === "month" && !manage ? null : toCoverageStatuses(schedule.coverage, dates),
+    // 수간호사는 월간에서도 그날 인원을 보며 고친다.
+    coverage: toCoverageStatuses(schedule.coverage, dates),
     issues: toIssues(violations),
     selectedCell: null,
     yearMonth: schedule.yearMonth,
     activeWeek,
     weekCount,
     lastSavedLabel: "-", // TODO: 마지막 수정 시각 필드가 명세에 없다
-    unassigned: schedule.cells.length > 0 && schedule.cells.every((c) => c.dutyCode === null || c.dutyCode === "AL"),
+    unassigned: schedule.cells.length > 0 && schedule.cells.every((c) => c.dutyCode === null || c.dutyCode === "AL" || c.dutyCode === "ED"),
     api: {
       scheduleId: schedule.id,
       version: schedule.version,
       dates,
       editable: schedule.status === "DRAFT",
       status: schedule.status,
+      hasEnteredCells: schedule.cells.some((c) => c.dutyCode !== null && c.dutyCode !== "AL" && c.dutyCode !== "ED"),
+      hasEmptyCells: schedule.cells.some((c) => c.dutyCode === null && c.editable),
     },
   };
 }
@@ -180,7 +176,7 @@ function sheetTitle(view: "week" | "month", yearMonth: string, week: number, now
 
 // ---- 조회 ----
 
-// view는 주/월 보기 전환 값이다. 역할은 서버가 세션에서 판정한다 (AGENTS.md 6.1).
+// view는 주/월 보기 전환 값이다. 로그인한 수간호사 화면만 있다 (10/26 계약).
 export async function getSchedulePage(params: SchedulePageParams = {}): Promise<SchedulePageData> {
   const { yearMonth, week } = resolvePeriod(params.ym, params.week);
   const periodLabel = `${yearMonth.slice(0, 4)}년 ${Number(yearMonth.slice(5))}월`;
@@ -188,32 +184,30 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
   try {
     schedule = await getScheduleByYearMonth(yearMonth);
   } catch (e) {
-    // TODO: 404가 '일반 간호사에게 확정본 없음'과 '수간호사에게 근무표 미생성' 중 무엇인지 명세에 없다.
-    if (e instanceof ApiError && e.status === 404) return { kind: "nurse-unpublished", periodLabel };
+    // 그 달 근무표를 아직 만들지 않았으면 404
+    if (e instanceof ApiError && e.status === 404) return { kind: "no-schedule", periodLabel, yearMonth };
     throw e;
   }
   if (schedule.nurses.length === 0) return { kind: "no-nurses", periodLabel };
 
   let violations: ApiViolation[] = [];
-  let approvedOff = new Set<string>();
   const holidaysJob = getHolidayNames(schedule.yearMonth);
-  const sortInfoJob = params.manage ? getNurseSortInfoMap() : Promise.resolve(new Map<string, { role?: NurseRole; careerMonths?: number | null }>());
   if (schedule.status === "DRAFT") {
-    // 위반 목록과 승인된 희망 오프는 수간호사만 받는다. 실패해도 시트는 보여 준다.
-    const offJob = getApprovedOffKeys(schedule.yearMonth).catch(() => approvedOff);
+    // 작성 중일 때만 위반 목록을 받는다. 실패해도 시트는 보여 준다.
     try {
       violations = await getAllHardViolations(schedule.id);
     } catch {}
-    approvedOff = await offJob;
   }
-  const [holidays, sortInfo] = await Promise.all([holidaysJob, sortInfoJob]);
-  const view = params.view === "month" ? "month" : "week";
-  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, approvedOff, sortInfo, view, week, !!params.manage) };
+  const holidays = await holidaysJob;
+  // 보기를 고르지 않고 처음 열면 근무표 응답의 defaultView(10/26 계약: 월간)를 따른다
+  const view = params.view === "month" || params.view === "week" ? params.view : params.entry ? (schedule.defaultView ?? "month") : "week";
+  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, view, week) };
 }
 
 // 서버에 연결하지 못했을 때 보여 줄 빈 근무표 틀. 날짜 열은 실제 오늘 날짜로 만들고 간호사 행은 없다.
 export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetData {
-  const v = params.view === "month" ? "month" : "week";
+  // 서버에 닿지 못해 defaultView를 모르면, 처음 열 때는 계약의 기본값(월간)으로 둔다
+  const v = params.view === "month" || (params.view !== "week" && params.entry) ? "month" : "week";
   const { yearMonth, week: activeWeek } = resolvePeriod(params.ym, params.week);
   const { yearMonth: nowYm, day } = todayKst();
   const all = monthDates(yearMonth);
@@ -222,6 +216,7 @@ export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetD
   const today = `${nowYm}-${String(day).padStart(2, "0")}`;
   return {
     view: v,
+    defaultSort: "skill",
     title: sheetTitle(v, yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, new Map())),
     rows: [],
@@ -233,7 +228,7 @@ export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetD
     weekCount,
     lastSavedLabel: "-",
     unassigned: false,
-    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT" },
+    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT", hasEnteredCells: false, hasEmptyCells: false },
   };
 }
 
@@ -277,9 +272,8 @@ async function getAllHardViolations(scheduleId: string): Promise<ApiViolation[]>
 // ---- 변경 ----
 
 // SCH-04. 전체 성공/전체 실패. 409 VERSION_CONFLICT, 423 SCHEDULE_LOCKED, 422 PROTECTED_CELL은 ApiError로 던진다.
-// AL 직접 입력은 금지라 여기서도 막는다. 잠금 토큰은 P2(잠금 기능)에서 넘긴다.
+// 잠금 토큰은 P2(잠금 기능)에서 넘긴다.
 export function patchScheduleCells(scheduleId: string, body: ApiCellBulkPatch, scheduleLockToken?: string) {
-  if (body.changes.some((c) => c.dutyCode === "AL")) throw new Error("AL은 직접 입력할 수 없어요.");
   return apiRequest<ApiCellBulkPatchResult>(`${SCHEDULES}/${scheduleId}/cells`, {
     method: "PATCH",
     body,

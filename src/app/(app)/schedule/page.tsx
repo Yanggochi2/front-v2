@@ -1,10 +1,9 @@
 import ScheduleEmptyState from "@/components/schedule/ScheduleEmptyState";
-import ScheduleNurseUnpublished from "@/components/schedule/ScheduleNurseUnpublished";
+import ScheduleNotCreated from "@/components/schedule/ScheduleNotCreated";
 import ScheduleSheet from "@/components/schedule/ScheduleSheet";
 import ApiOfflineBanner from "@/components/ui/ApiOfflineBanner";
 import SchedulePageHeader from "@/components/ui/SchedulePageHeader";
 import { getOfflineSheet, getSchedulePage } from "@/services/scheduleApi";
-import { getMyRole } from "@/services/shellApi";
 import type { SchedulePageData } from "@/types/schedule.type";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -14,16 +13,16 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 // 월별 보기는 /schedule?view=month 로 둔다 (router.md 참고).
 export default async function SchedulePage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const canManage = (await getMyRole()) !== "NURSE";
   const params = {
-    // 수간호사가 보기·기간 없이 처음 열면 월간으로 연다. 주간 링크는 ym·week를 달고 오므로 그대로 주간이다.
-    view: first(sp.view) ?? (canManage && !sp.ym && !sp.week ? "month" : undefined),
+    view: first(sp.view),
     ym: first(sp.ym),
     week: first(sp.week),
+    // 보기·기간 없이 처음 열면 근무표의 기본 보기(월간)로 연다. 주간 링크는 ym·week를 달고 오므로 그대로 주간이다.
+    entry: !sp.view && !sp.ym && !sp.week,
   };
   let data: SchedulePageData | null = null;
   try {
-    data = await getSchedulePage({ ...params, manage: canManage });
+    data = await getSchedulePage(params);
   } catch {
     data = null;
   }
@@ -49,7 +48,6 @@ export default async function SchedulePage({ searchParams }: { searchParams: Sea
         <ScheduleSheet
           key={`${view}-${yearMonth}-${activeWeek}-${unassigned}-${api.version}`}
           sheet={data.sheet}
-          canManage={canManage}
         />
       </div>
     );
@@ -58,7 +56,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Sea
   return (
     <div className="flex flex-col gap-8 px-12 pt-12 pb-10">
       <SchedulePageHeader title="근무표" subtitle={data.periodLabel} />
-      {data.kind === "no-nurses" ? <ScheduleEmptyState /> : <ScheduleNurseUnpublished />}
+      {data.kind === "no-nurses" ? <ScheduleEmptyState /> : <ScheduleNotCreated yearMonth={data.yearMonth} />}
     </div>
   );
 }

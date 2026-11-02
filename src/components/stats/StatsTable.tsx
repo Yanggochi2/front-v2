@@ -4,6 +4,7 @@ import { AdminTableEmptyRow, AdminTableShell, AdminTd, AdminTh, AdminTr } from "
 import type { FairnessRow } from "@/types/stats.type";
 
 function offLabel(row: FairnessRow) {
+  if (row.offTarget === null) return { text: `${row.offCount} / -`, tone: "gray" as const };
   const lack = row.offTarget - row.offCount;
   return lack >= OFF_SHORTAGE_WARN_DAYS
     ? { text: `${row.offCount} / ${row.offTarget} · ${lack}일 부족`, tone: "red" as const }

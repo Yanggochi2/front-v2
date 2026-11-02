@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLogout } from "@/hooks/useLogout";
 import { isNavActive, useNavModel, type NavItem } from "@/hooks/useNavModel";
 import type { ShellInfo } from "@/types/shell.type";
 import NavIcon from "./NavIcon";
@@ -40,7 +41,7 @@ function NavList({ items }: { items: NavItem[] }) {
 }
 
 export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose: () => void }) {
-  const nav = useNavModel(shell);
+  const nav = useNavModel();
 
   return (
     <aside className="flex h-full w-[240px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-white px-4 pt-6 pb-5">
@@ -70,28 +71,40 @@ export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose:
       </div>
       <div className="h-3 shrink-0" />
       <NavList items={nav.mainItems} />
-      {nav.adminItems.length > 0 ? (
-        <>
-          <p className="px-4 pt-5 pb-1 text-[16px] font-bold text-ink-mute">병동 관리</p>
-          <NavList items={nav.adminItems} />
-        </>
-      ) : null}
+      <p className="px-4 pt-5 pb-1 text-[16px] font-bold text-ink-mute">병동 관리</p>
+      <NavList items={nav.adminItems} />
       <div className="min-h-4 flex-1" />
-      <Link
-        href={nav.profileHref}
-        className="flex w-full items-center gap-3 rounded-[16px] border border-line bg-canvas px-3 py-3 transition-colors hover:border-grid hover:bg-surface"
-      >
+      <SidebarAccount userName={shell.userName} />
+    </aside>
+  );
+}
+
+// 로그인한 수간호사와 로그아웃. 마이페이지가 없어져(10/26 계약) 로그아웃을 여기에 둔다.
+function SidebarAccount({ userName }: { userName: string }) {
+  const { run, loading, error } = useLogout();
+  return (
+    <div className="flex flex-col gap-2 rounded-[16px] border border-line bg-canvas px-3 py-3">
+      <div className="flex items-center gap-3">
         <span
           aria-hidden
           className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[17px] font-bold text-primary"
         >
-          {nav.userName.slice(0, 1)}
+          {userName.slice(0, 1)}
         </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[17px] font-bold text-ink">{nav.userName}</span>
-          <span className="text-[14px] font-medium text-ink-mute">{nav.role === "HEAD_NURSE" ? "수간호사" : "간호사"}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-[17px] font-bold text-ink">{userName}</span>
+          <span className="text-[14px] font-medium text-ink-mute">수간호사</span>
         </span>
-      </Link>
-    </aside>
+      </div>
+      <button
+        type="button"
+        onClick={run}
+        disabled={loading}
+        className="h-10 w-full rounded-[12px] border border-line bg-white text-[16px] font-bold text-ink-sub transition-colors hover:border-grid hover:text-ink disabled:opacity-50"
+      >
+        {loading ? "로그아웃하는 중…" : "로그아웃"}
+      </button>
+      {error ? <p role="alert" className="text-[14px] font-medium text-danger">{error}</p> : null}
+    </div>
   );
 }

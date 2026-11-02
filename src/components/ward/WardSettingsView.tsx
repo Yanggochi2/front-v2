@@ -1,8 +1,5 @@
 import AdminButton from "@/components/ui/AdminButton";
-import AdminChip from "@/components/ui/AdminChip";
-import AdminNotice from "@/components/ui/AdminNotice";
 import type { ReactNode } from "react";
-import JoinCodeSection from "./JoinCodeSection";
 import RequiredStaffSection from "./RequiredStaffSection";
 import type { WardSettingsData } from "@/types/ward.type";
 
@@ -45,30 +42,6 @@ export default function WardSettingsView({ ward }: { ward: WardSettingsData | nu
           <p className="text-[18px] leading-normal font-bold text-ink">-</p>
         )}
       </Card>
-      <Card title="병동 코드">
-        <JoinCodeSection initialCode={ward?.wardCode ?? "-"} />
-        <p className="text-[16px] leading-normal font-medium text-ink-sub">
-          코드를 다시 만들면 이전 코드로는 가입할 수 없어요. 이미 들어온 사람에게는 영향이 없어요.
-        </p>
-      </Card>
-      <Card title="수간호사 권한">
-        {(ward?.headNurses ?? []).map((h) => (
-          <div key={h.id} className="flex items-center gap-3">
-            <p className="text-[20px] leading-normal font-bold text-ink">
-              {h.name}
-              {h.isMe ? " (나)" : ""}
-            </p>
-            <AdminChip tone="blue">수간호사</AdminChip>
-          </div>
-        ))}
-        <div className="flex flex-wrap gap-3">
-          <AdminButton variant="primary">다른 사람에게 수간호사 추가</AdminButton>
-          <AdminButton>권한 넘기기</AdminButton>
-        </div>
-      </Card>
-      <AdminNotice tone="red">
-        병동의 마지막 수간호사는 권한을 넘기기 전에는 나가거나 바꿀 수 없어요.
-      </AdminNotice>
     </>
   );
 }

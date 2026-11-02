@@ -1,8 +1,8 @@
 // docs/API.md 근무표·자동 생성 모델. 명세에 모양이 없는 필드는 unknown으로 두고 TODO로 남긴다.
 import type { PageMeta } from "./api.type";
-import type { ApiDutyRole } from "./nursesApi.type";
+import type { ApiDutyRole, ApiNurseRole } from "./nursesApi.type";
 
-// TODO(🔶 ED 교육): ED 코드는 미확정. 타입에서만 받아 주고 입력 UI는 만들지 않는다.
+// ED는 교육·학회. 10/26 계약부터 연차(AL)와 함께 직접 입력하고, 자동 생성 때 항상 그대로 남는다.
 export type ApiDutyCode = "D" | "E" | "N" | "O" | "AL" | "ED";
 export type ScheduleStatus = "DRAFT" | "GENERATING" | "CONFIRMED" | "ARCHIVED";
 
@@ -11,9 +11,11 @@ export type ApiScheduleNurse = {
   name: string;
   // TODO: 백엔드 확정 후 결정 (숙련 그룹 필드 이름. 비즈니스 로직 10-19 기준 추가 예정)
   skillGroup?: string | null;
-  // 아래와 그 밖의 Nurse 필드(숙련도·경력 등)는 역할별로 다르다. 받은 것만 표시한다.
+  // 숙련도순 정렬에 쓰는 값 (10/26 계약부터 근무표 응답에 온다). 받은 것만 쓴다.
+  role?: ApiNurseRole;
   dutyRole?: ApiDutyRole;
   careerMonths?: number | null;
+  isPreceptor?: boolean;
   [key: string]: unknown;
 };
 
@@ -54,13 +56,16 @@ export type ApiSchedule = {
   nurses: ApiScheduleNurse[];
   cells: ApiScheduleCell[];
   coverage: ApiCoverage[];
-  statistics?: ApiNurseStatistic[]; // 수간호사는 전원, 일반 간호사는 본인만
+  statistics?: ApiNurseStatistic[];
   confirmedAt: string | null;
+  // 10/26 계약 3장: 처음 보기·정렬. sort는 이 응답의 nurses[] 정렬 기준
+  defaultView?: "month" | "week";
+  defaultSort?: "proficiency" | "name";
+  sort?: "proficiency" | "name";
 };
 
-// SCH-04
+// SCH-04. 소속 기간 밖 칸은 서버가 거절한다.
 export type ApiCellChange = { nurseId: string; date: string; dutyCode: ApiDutyCode | null };
-// AL 직접 입력은 금지다 (docs/API.md). 호출부에서 막는다.
 export type ApiCellBulkPatch = { baseVersion: number; changes: ApiCellChange[] };
 export type ApiCellBulkPatchResult = {
   changedCells: ApiScheduleCell[];
@@ -99,8 +104,11 @@ export type ApiGenerationJob = {
   error?: string | null; // 실패(FAILED) 사유. 명세에는 없고 백엔드 응답에 있다
 };
 
+// 자동 생성 때 그대로 둘 칸. 근무 코드 없이 칸 위치만 보낸다 (10/26 계약 4장). AL·ED는 넣지 않아도 남는다.
+export type ApiFixedCell = { nurseId: string; date: string };
+
 export type ApiGenerationStart = {
-  fixedCells: ApiCellChange[]; // TODO: fixedCells 원소 모양은 명세에 없음. 셀 변경과 같다고 가정(추측)
+  fixedCells: ApiFixedCell[];
   maxSeconds: number;
 };
 export type ApiGenerationStop = { applyBestResult: boolean };

@@ -8,7 +8,7 @@ import { exportScheduleXlsx } from "@/services/scheduleApi";
 type Props = {
   scheduleId: string; // 비어 있으면(서버 연결 실패) 엑셀 저장을 막는다
   yearMonth: string;
-  canExport: boolean; // 엑셀 내보내기(SCH-09)는 수간호사만 된다
+  canExport: boolean; // 엑셀 내보내기(SCH-09)는 관리 화면에서만 된다 (공유 링크 화면은 인쇄만)
 };
 
 // 근무표 공유: 엑셀 파일로 저장(SCH-09), 인쇄·PDF 저장(브라우저 인쇄, A4 가로)

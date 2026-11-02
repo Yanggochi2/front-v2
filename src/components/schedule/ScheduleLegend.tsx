@@ -7,21 +7,23 @@ const DUTIES: { code: DutyCode; name: string }[] = [
   { code: "N", name: "나이트" },
   { code: "O", name: "휴무" },
   { code: "AL", name: "연차" },
+  { code: "ED", name: "교육" },
 ];
 
 const BADGE = "rounded-full px-1 text-[11px] leading-tight font-bold text-white";
 
 type Props = {
-  isMonth: boolean; // 월간은 칸 표시가 짧다 (O·AL·C, 희망 오프는 테두리)
+  isMonth: boolean; // 월간은 칸 표시가 짧다 (O·AL·C)
   canManage: boolean; // 빈 칸·규칙 위반 표시는 편집하는 수간호사에게만 보인다
   hasToday: boolean;
+  shared?: boolean; // 공유 링크 화면: 연차·교육·차지 표시가 오지 않아 범례에서 뺀다
 };
 
 // 시트 아래 범례. 시트 칸과 같은 모양으로 그리고, 인쇄본에도 남긴다.
-export default function ScheduleLegend({ isMonth, canManage, hasToday }: Props) {
+export default function ScheduleLegend({ isMonth, canManage, hasToday, shared = false }: Props) {
   return (
     <ul aria-label="범례" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] font-medium text-ink-sub">
-      {DUTIES.map(({ code, name }) => (
+      {DUTIES.filter(({ code }) => !shared || (code !== "AL" && code !== "ED")).map(({ code, name }) => (
         <li key={code} className="flex items-center gap-1.5">
           <span
             aria-hidden
@@ -32,23 +34,17 @@ export default function ScheduleLegend({ isMonth, canManage, hasToday }: Props) 
           {name}
         </li>
       ))}
-      <li aria-hidden className="h-4 w-px bg-line" />
-      <li className="flex items-center gap-1.5">
-        {isMonth ? (
-          <span aria-hidden className="h-5 w-6 rounded-[5px] ring-2 ring-ink-sub ring-inset" />
-        ) : (
-          <span aria-hidden className={`${BADGE} bg-ink-sub`}>
-            희망
-          </span>
-        )}
-        승인된 희망 오프
-      </li>
-      <li className="flex items-center gap-1.5">
-        <span aria-hidden className={`${BADGE} bg-primary`}>
-          {isMonth ? "C" : "차지"}
-        </span>
-        차지
-      </li>
+      {shared ? null : (
+        <>
+          <li aria-hidden className="h-4 w-px bg-line" />
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden className={`${BADGE} bg-primary`}>
+              {isMonth ? "C" : "차지"}
+            </span>
+            차지
+          </li>
+        </>
+      )}
       {canManage ? (
         <>
           <li className="flex items-center gap-1.5 print:hidden">

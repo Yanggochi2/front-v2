@@ -26,6 +26,7 @@ export function mapNurse(n: ApiNurse): Nurse {
     name: n.name,
     role: n.role,
     dutyRole: n.dutyRole as DutyRole | undefined,
+    isPreceptor: n.isPreceptor,
     status: (n.status ?? undefined) as NurseStatus | undefined,
     careerYears: n.careerMonths == null ? undefined : Math.floor(n.careerMonths / 12),
     careerMonths: n.careerMonths == null ? undefined : n.careerMonths % 12,
@@ -37,10 +38,16 @@ export function mapNurse(n: ApiNurse): Nurse {
 }
 
 function mapNurseDetail(n: ApiNurse): NurseDetail {
-  if (!n.joinedAt || !n.affiliationStart || n.version === undefined) {
+  if (n.joinedYear == null || !n.affiliationStart || n.version === undefined) {
     throw new Error("간호사 상세 정보가 올바르지 않아요.");
   }
-  return { ...mapNurse(n), joinedAt: n.joinedAt, affiliationStart: n.affiliationStart, version: n.version };
+  return {
+    ...mapNurse(n),
+    joinedYear: n.joinedYear,
+    preceptorOf: n.preceptorOf ?? [],
+    affiliationStart: n.affiliationStart,
+    version: n.version,
+  };
 }
 
 // NUR-02.
@@ -54,36 +61,14 @@ export async function getNurses(query: NurseListQuery = {}): Promise<NurseListRe
   return { items, activeCount: items.filter((n) => n.status !== "RETIRED").length };
 }
 
-// 가입 승인 때 계정을 연결할 수 있는, 계정이 없는 재직 간호사 (수간호사 응답의 hasAccount 기준)
-export async function getUnlinkedNurses(): Promise<Nurse[]> {
-  const { items } = await getNurses({ includeRetired: false });
-  return items.filter((n) => n.hasAccount === false && n.status !== "RETIRED");
-}
-
-// 신청 목록의 신청자 이름 표시용. 실패해도 신청 목록은 보여준다(applicantId로 대체).
-export async function getNurseNameMap(): Promise<Map<string, string>> {
+// 프리셉터가 맡을 수 있는 신입: 같은 병동의 재직 NEW 간호사 (10/26 계약 2장).
+// 불러오지 못하면 null (빈 목록과 구분해, 폼에서 "불러오지 못했어요"로 보여 준다).
+export async function getPreceptorCandidates(): Promise<{ id: string; name: string }[] | null> {
   try {
-    const list = await apiRequestList<ApiNurse>(NURSES_PATH, {
-      query: { includeRetired: true, size: 100 },
-    });
-    return new Map(list.data.map((n) => [n.id, n.name]));
+    const list = await apiRequestList<ApiNurse>(NURSES_PATH, { query: { dutyRole: "NEW", size: 100 } });
+    return list.data.filter((n) => n.status !== "RETIRED").map((n) => ({ id: n.id, name: n.name }));
   } catch {
-    return new Map();
-  }
-}
-
-// 근무표 행 정렬용. 근무표 nurses[]에 없는 수간호사 여부·총경력을 NUR-02에서 채운다. 수간호사 화면에서만 부른다.
-// 의도한 폴백: 실패하면 빈 맵을 돌려주고, 정렬 정보가 없는 행은 맨 뒤(같으면 이름순)로 간다. 근무표는 그대로 보인다.
-// 한계: 100명까지만 받는다. 넘으면 나머지는 정렬 정보 없이 맨 뒤로 간다.
-// TODO(Yanggochi2/backend#76): 근무표 응답에 role·careerMonths가 오면 이 요청은 뺀다
-export async function getNurseSortInfoMap(): Promise<Map<string, Pick<ApiNurse, "role" | "careerMonths">>> {
-  try {
-    const list = await apiRequestList<ApiNurse>(NURSES_PATH, {
-      query: { includeRetired: true, size: 100 },
-    });
-    return new Map(list.data.map((n) => [n.id, { role: n.role, careerMonths: n.careerMonths }]));
-  } catch {
-    return new Map();
+    return null;
   }
 }
 
