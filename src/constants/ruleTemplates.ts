@@ -54,7 +54,7 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
   {
     code: "NIGHT_REST",
     name: "야간 후 휴식",
-    parts: ["나이트를 2일 이상 이어서 하면 그 뒤 2일은 쉬어요"],
+    parts: ["나이트를 3일 이어서 하면 그 뒤 2일은 쉬어요"],
     addable: false,
     defaultStrength: "REQUIRED",
   },
