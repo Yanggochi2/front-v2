@@ -16,8 +16,8 @@ export default function LandingHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2.5">
-          <LandingButton href="/login" variant="ghost" size="sm">
-            로그인
+          <LandingButton href="/manage" variant="ghost" size="sm">
+            관리 화면
           </LandingButton>
           <LandingButton href="#cta" size="sm">
             도입 문의

@@ -12,7 +12,7 @@ export default async function CreateWardPage() {
         <OnboardingHeading
           titleSize="md"
           title="새 병동을 만들어요"
-          description="만든 사람이 이 병동의 수간호사가 돼요"
+          description="만든 사람이 이 병동의 수간호사가 되고, 관리 링크로 들어와요"
         />
         <CreateWardForm defaults={defaults} />
       </div>

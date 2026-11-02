@@ -54,24 +54,6 @@ export async function getNurses(query: NurseListQuery = {}): Promise<NurseListRe
   return { items, activeCount: items.filter((n) => n.status !== "RETIRED").length };
 }
 
-// 가입 승인 때 계정을 연결할 수 있는, 계정이 없는 재직 간호사 (수간호사 응답의 hasAccount 기준)
-export async function getUnlinkedNurses(): Promise<Nurse[]> {
-  const { items } = await getNurses({ includeRetired: false });
-  return items.filter((n) => n.hasAccount === false && n.status !== "RETIRED");
-}
-
-// 신청 목록의 신청자 이름 표시용. 실패해도 신청 목록은 보여준다(applicantId로 대체).
-export async function getNurseNameMap(): Promise<Map<string, string>> {
-  try {
-    const list = await apiRequestList<ApiNurse>(NURSES_PATH, {
-      query: { includeRetired: true, size: 100 },
-    });
-    return new Map(list.data.map((n) => [n.id, n.name]));
-  } catch {
-    return new Map();
-  }
-}
-
 // 근무표 행 정렬용. 근무표 nurses[]에 없는 수간호사 여부·총경력을 NUR-02에서 채운다. 수간호사 화면에서만 부른다.
 // 의도한 폴백: 실패하면 빈 맵을 돌려주고, 정렬 정보가 없는 행은 맨 뒤(같으면 이름순)로 간다. 근무표는 그대로 보인다.
 // 한계: 100명까지만 받는다. 넘으면 나머지는 정렬 정보 없이 맨 뒤로 간다.

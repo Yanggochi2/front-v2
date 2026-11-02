@@ -8,9 +8,7 @@ type Props = {
   onAddAnother: () => void;
 };
 
-// 등록 완료 안내.
-// 지금은 간호사가 직접 가입해 병동 코드로 신청하면, 가입 승인에서 이 간호사 행과 연결한다.
-// TODO: "등록하면 계정 발급 → 첫 로그인 때 비밀번호 설정" 흐름(10-20 확정안)이 백엔드에 생기면 안내를 바꾼다
+// 등록 완료 안내. 간호사는 계정 없이 등록되고, 확정된 근무표는 공유 링크로 본다 (10/26 계약).
 // Esc는 "한 명 더 등록"과 같다 (창을 닫고 빈 폼으로).
 export default function NurseRegisteredDialog({ name, onAddAnother }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -36,13 +34,9 @@ export default function NurseRegisteredDialog({ name, onAddAnother }: Props) {
         <h2 id="nurse-registered-title" className="text-[26px] font-bold text-ink">
           {name} 간호사를 등록했어요
         </h2>
-        <div className="flex flex-col gap-2 rounded-[14px] bg-brand-soft p-5">
-          <p className="text-[18px] font-bold text-ink">로그인은 이렇게 연결돼요</p>
-          <p className="text-[17px] font-medium text-ink-sub">
-            간호사가 가입한 뒤 병동 코드로 신청하면, 가입 승인에서 이 간호사와 연결해 주세요. 병동 코드는 병동 설정에
-            있어요.
-          </p>
-        </div>
+        <p className="text-[17px] font-medium text-ink-sub">
+          이제 근무표에 이 간호사의 줄이 생겨요. 확정한 근무표는 공유 링크로 간호사들에게 보여 줄 수 있어요.
+        </p>
         <div className="flex justify-end gap-3">
           <RnButton variant="secondary" size="lg" onClick={onAddAnother}>
             한 명 더 등록

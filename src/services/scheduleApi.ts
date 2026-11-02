@@ -11,7 +11,6 @@ import type {
   ApiViolationQuery,
 } from "@/types/scheduleApi.type";
 import { getNurseSortInfoMap } from "./nursesApi";
-import { getApprovedOffKeys } from "./requestsApi";
 import { getHolidays } from "./rulesApi";
 import type {
   CoverageDuty,
@@ -113,11 +112,9 @@ function toSheet(
   schedule: ApiSchedule,
   violations: ApiViolation[],
   holidays: Map<string, string>,
-  approvedOff: Set<string>, // "간호사id|YYYY-MM-DD"
   sortInfo: Map<string, { role?: NurseRole; careerMonths?: number | null }>,
   view: "week" | "month",
   activeWeek: number,
-  manage: boolean,
 ): ScheduleSheetData {
   const { yearMonth: nowYm, day } = todayKst();
   const all = monthDates(schedule.yearMonth);
@@ -141,7 +138,6 @@ function toSheet(
           duty: c?.dutyCode ?? null,
           editable: c ? c.editable : false,
           charge: c?.isCharge || undefined,
-          approvedOff: approvedOff.has(`${n.id}|${d}`) || undefined,
         };
       }),
     })),
@@ -152,8 +148,8 @@ function toSheet(
     title: sheetTitle(view, schedule.yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, holidays)),
     rows: applyViolationFlags(rows, dates, violations),
-    // 수간호사는 월간에서도 그날 인원을 보며 고친다. 간호사의 월간 보기는 지금처럼 인원 행 없이 둔다.
-    coverage: view === "month" && !manage ? null : toCoverageStatuses(schedule.coverage, dates),
+    // 수간호사는 월간에서도 그날 인원을 보며 고친다.
+    coverage: toCoverageStatuses(schedule.coverage, dates),
     issues: toIssues(violations),
     selectedCell: null,
     yearMonth: schedule.yearMonth,
@@ -180,7 +176,7 @@ function sheetTitle(view: "week" | "month", yearMonth: string, week: number, now
 
 // ---- 조회 ----
 
-// view는 주/월 보기 전환 값이다. 역할은 서버가 세션에서 판정한다 (AGENTS.md 6.1).
+// view는 주/월 보기 전환 값이다. 관리 링크로 들어온 수간호사 화면만 있다 (10/26 계약).
 export async function getSchedulePage(params: SchedulePageParams = {}): Promise<SchedulePageData> {
   const { yearMonth, week } = resolvePeriod(params.ym, params.week);
   const periodLabel = `${yearMonth.slice(0, 4)}년 ${Number(yearMonth.slice(5))}월`;
@@ -188,27 +184,24 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
   try {
     schedule = await getScheduleByYearMonth(yearMonth);
   } catch (e) {
-    // TODO: 404가 '일반 간호사에게 확정본 없음'과 '수간호사에게 근무표 미생성' 중 무엇인지 명세에 없다.
-    if (e instanceof ApiError && e.status === 404) return { kind: "nurse-unpublished", periodLabel };
+    // 그 달 근무표를 아직 만들지 않았으면 404
+    if (e instanceof ApiError && e.status === 404) return { kind: "no-schedule", periodLabel, yearMonth };
     throw e;
   }
   if (schedule.nurses.length === 0) return { kind: "no-nurses", periodLabel };
 
   let violations: ApiViolation[] = [];
-  let approvedOff = new Set<string>();
   const holidaysJob = getHolidayNames(schedule.yearMonth);
-  const sortInfoJob = params.manage ? getNurseSortInfoMap() : Promise.resolve(new Map<string, { role?: NurseRole; careerMonths?: number | null }>());
+  const sortInfoJob = getNurseSortInfoMap();
   if (schedule.status === "DRAFT") {
-    // 위반 목록과 승인된 희망 오프는 수간호사만 받는다. 실패해도 시트는 보여 준다.
-    const offJob = getApprovedOffKeys(schedule.yearMonth).catch(() => approvedOff);
+    // 작성 중일 때만 위반 목록을 받는다. 실패해도 시트는 보여 준다.
     try {
       violations = await getAllHardViolations(schedule.id);
     } catch {}
-    approvedOff = await offJob;
   }
   const [holidays, sortInfo] = await Promise.all([holidaysJob, sortInfoJob]);
   const view = params.view === "month" ? "month" : "week";
-  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, approvedOff, sortInfo, view, week, !!params.manage) };
+  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, sortInfo, view, week) };
 }
 
 // 서버에 연결하지 못했을 때 보여 줄 빈 근무표 틀. 날짜 열은 실제 오늘 날짜로 만들고 간호사 행은 없다.
