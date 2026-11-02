@@ -36,6 +36,8 @@ type RequestOptions = {
   idempotencyKey?: string;
   // 근무표 편집 잠금을 쓰는 변경 요청에 넘긴다.
   scheduleLockToken?: string;
+  // 공유 링크 조회처럼 로그인 없이 부르는 요청. 세션 쿠키를 보내지 않는다.
+  anonymous?: boolean;
 };
 
 function buildUrl(path: string, query?: Query) {
@@ -75,7 +77,8 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   if (options.scheduleLockToken) headers["X-Schedule-Lock-Token"] = options.scheduleLockToken;
   // 쿠키를 먼저 읽어 서버 렌더링 시 항상 요청마다 렌더링되게 한다 (빌드 시점에 결과가 고정되지 않도록).
-  const cookie = await serverCookieHeader();
+  // 로그인 없이 부르는 요청(공유 링크 조회)에는 세션 쿠키를 넘기지 않는다.
+  const cookie = options.anonymous ? undefined : await serverCookieHeader();
   if (cookie) headers.Cookie = cookie;
 
   if (BASE_URL === "") {
@@ -85,7 +88,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   const response = await fetch(buildUrl(path, options.query), {
     method,
     headers,
-    credentials: "include",
+    credentials: options.anonymous ? "omit" : "include",
     cache: "no-store",
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });

@@ -31,7 +31,7 @@ const SCHEDULES = "/wards/me/schedules";
 // ---- 매핑 (API -> UI 타입) ----
 
 // holidays: 날짜 → 공휴일 이름
-function toDay(date: string, today: string, holidays: Map<string, string>): ScheduleDay {
+export function toDay(date: string, today: string, holidays: Map<string, string>): ScheduleDay {
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   const holidayName = holidays.get(date);
   const tone: DayTone =

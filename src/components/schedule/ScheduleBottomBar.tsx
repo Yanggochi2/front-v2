@@ -85,7 +85,7 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
       {dialog?.kind === "confirm" ? (
         <ScheduleConfirmDialog
           title="근무표를 확정할까요?"
-          description="확정하면 간호사들에게 공개되고 알림이 가요. 확정한 뒤에는 고칠 수 없고, 고치려면 확정을 취소해야 해요."
+          description="확정하면 공유 링크를 만들어 간호사들에게 보여 줄 수 있어요. 확정한 뒤에는 고칠 수 없고, 고치려면 확정을 취소해야 해요."
           confirmLabel="확정하기"
           busy={loading}
           error={error}
@@ -107,7 +107,7 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
       {dialog?.kind === "cancel" ? (
         <ScheduleConfirmDialog
           title="확정을 취소할까요?"
-          description="취소하면 다시 고칠 수 있는 상태가 되고, 간호사들에게 취소 알림과 사유가 가요."
+          description="취소하면 다시 고칠 수 있는 상태가 되고, 만들어 둔 공유 링크는 더 이상 열리지 않아요. 다시 확정한 뒤 새 링크를 만들어 주세요."
           confirmLabel="확정 취소"
           reasonLabel="취소 사유"
           busy={loading}
