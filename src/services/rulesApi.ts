@@ -1,6 +1,6 @@
-import { OFF_TARGET_FORMULA_LABEL, RULE_FILTER_CHIPS } from "@/constants/rules.constants";
+import { RULE_FILTER_CHIPS } from "@/constants/rules.constants";
 import { BUILT_IN_RULE_CODES, findRuleTemplate, ruleSentence } from "@/constants/ruleTemplates";
-import { apiRequest } from "@/lib/apiClient";
+import { ApiError, apiRequest } from "@/lib/apiClient";
 import type { HolidayItem, RuleItem, RulesData, RuleStrength } from "@/types/rules.type";
 import type {
   ApiHoliday,
@@ -93,13 +93,17 @@ export async function putHoliday(date: string, body: ApiHolidayPutBody): Promise
   return apiRequest<ApiHoliday>(`/wards/me/holidays/${date}`, { method: "PUT", body });
 }
 
-// RULE-06/07 (🔶 결정 필요). 계산식은 constants에 둔다: OFF_TARGET_FORMULA_LABEL
-export const OFF_TARGET_FORMULA = OFF_TARGET_FORMULA_LABEL;
-
-export async function getOffTarget(yearMonth: string): Promise<ApiOffTarget> {
-  return apiRequest<ApiOffTarget>(`/wards/me/off-targets/${yearMonth}`);
+// RULE-06. 그 달 근무표가 아직 없으면 null
+export async function getOffTarget(yearMonth: string): Promise<ApiOffTarget | null> {
+  try {
+    return await apiRequest<ApiOffTarget>(`/wards/me/off-targets/${yearMonth}`);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
 }
 
+// RULE-07. targetCount를 null로 보내면 자동값으로 돌아간다
 export async function patchOffTarget(yearMonth: string, body: ApiOffTargetPatchBody): Promise<ApiOffTarget> {
   return apiRequest<ApiOffTarget>(`/wards/me/off-targets/${yearMonth}`, { method: "PATCH", body });
 }
