@@ -36,7 +36,8 @@ export default function ManageEntry() {
       const fromLink = new URLSearchParams(window.location.hash.slice(1)).get("token");
       if (fromLink) {
         saveManagementToken(fromLink);
-        window.history.replaceState(window.history.state, "", window.location.pathname);
+        // state를 null로 넘겨야 Next 라우터도 토큰이 지워진 주소를 안다 (#62 리뷰 반영과 같은 이유)
+        window.history.replaceState(null, "", window.location.pathname);
       }
       if (!fromLink && !readManagementToken(document.cookie)) return setState("missing");
       setState("checking");
