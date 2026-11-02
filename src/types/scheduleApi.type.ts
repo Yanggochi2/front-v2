@@ -1,6 +1,6 @@
 // docs/API.md 근무표·자동 생성 모델. 명세에 모양이 없는 필드는 unknown으로 두고 TODO로 남긴다.
 import type { PageMeta } from "./api.type";
-import type { ApiDutyRole } from "./nursesApi.type";
+import type { ApiDutyRole, ApiNurseRole } from "./nursesApi.type";
 
 // ED는 교육·학회. 10/26 계약부터 연차(AL)와 함께 직접 입력하고, 자동 생성 때 항상 그대로 남는다.
 export type ApiDutyCode = "D" | "E" | "N" | "O" | "AL" | "ED";
@@ -11,9 +11,11 @@ export type ApiScheduleNurse = {
   name: string;
   // TODO: 백엔드 확정 후 결정 (숙련 그룹 필드 이름. 비즈니스 로직 10-19 기준 추가 예정)
   skillGroup?: string | null;
-  // 아래와 그 밖의 Nurse 필드(숙련도·경력 등)는 역할별로 다르다. 받은 것만 표시한다.
+  // 숙련도순 정렬에 쓰는 값 (10/26 계약부터 근무표 응답에 온다). 받은 것만 쓴다.
+  role?: ApiNurseRole;
   dutyRole?: ApiDutyRole;
   careerMonths?: number | null;
+  isPreceptor?: boolean;
   [key: string]: unknown;
 };
 
@@ -54,8 +56,12 @@ export type ApiSchedule = {
   nurses: ApiScheduleNurse[];
   cells: ApiScheduleCell[];
   coverage: ApiCoverage[];
-  statistics?: ApiNurseStatistic[]; // 수간호사는 전원, 일반 간호사는 본인만
+  statistics?: ApiNurseStatistic[];
   confirmedAt: string | null;
+  // 10/26 계약 3장: 처음 보기·정렬. sort는 이 응답의 nurses[] 정렬 기준
+  defaultView?: "month" | "week";
+  defaultSort?: "proficiency" | "name";
+  sort?: "proficiency" | "name";
 };
 
 // SCH-04. 소속 기간 밖 칸은 서버가 거절한다.
