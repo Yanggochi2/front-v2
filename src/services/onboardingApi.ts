@@ -1,16 +1,16 @@
 import { apiRequest } from "@/lib/apiClient";
 import { CREATE_WARD_DEFAULTS } from "@/constants/onboarding.constants";
 import type { CreateWardDefaults, CreateWardInput } from "@/types/onboarding.type";
-import type { ManagementLink, WorkspaceCreateRequest, WorkspaceCreateResponse } from "@/types/wardApi.type";
+import type { WorkspaceCreateRequest, WorkspaceCreateResponse } from "@/types/wardApi.type";
 
 // TODO: 규칙 프리셋 목록과 기본 인원 API는 명세에 없다. 화면 기본값은 constants를 쓴다.
 export async function getCreateWardDefaults(): Promise<CreateWardDefaults> {
   return CREATE_WARD_DEFAULTS;
 }
 
-// POST /workspaces (10/26 계약). 로그인 없이 병동과 수간호사를 함께 만들고 관리 링크를 받는다.
-// 비밀값을 돌려주는 요청이라 백엔드가 Idempotency-Key 캐시에서 빼므로 키를 보내지 않는다 (다시 부르면 새 병동이 생긴다).
-export async function createWorkspace(input: CreateWardInput): Promise<ManagementLink> {
+// POST /workspaces (10/26 계약). 로그인한 계정이 새 병동의 수간호사가 된다.
+// 이미 병동이 있으면 409 MEMBERSHIP_ALREADY_EXISTS, 로그인하지 않았으면 401 UNAUTHENTICATED.
+export async function createWorkspace(input: CreateWardInput): Promise<void> {
   const body: WorkspaceCreateRequest = {
     hospitalName: input.hospitalName,
     wardName: input.wardName,
@@ -21,9 +21,9 @@ export async function createWorkspace(input: CreateWardInput): Promise<Managemen
     requiredStaff: input.requiredStaff,
     rulePreset: input.rulePreset,
   };
-  const { managementToken, managementPath } = await apiRequest<WorkspaceCreateResponse>("/workspaces", {
+  await apiRequest<WorkspaceCreateResponse>("/workspaces", {
     method: "POST",
     body,
+    idempotencyKey: crypto.randomUUID(),
   });
-  return { managementToken, managementPath };
 }
