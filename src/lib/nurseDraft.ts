@@ -1,5 +1,46 @@
+import { ApiError } from "@/lib/apiClient";
+import { todayKst } from "@/lib/schedulePeriod";
 import type { NurseCreate } from "@/types/nursesApi.type";
-import type { NurseDetail, NurseDraft } from "@/types/nurses.type";
+import type { NurseDetail, NurseDraft, NurseDraftErrors, NurseDraftField } from "@/types/nurses.type";
+
+// 백엔드 계약(docs/client-1026-api.md 2장)과 같은 범위. 입사 연도는 1900 ~ 한국 기준 올해.
+const MIN_JOINED_YEAR = 1900;
+const NAME_MAX_LENGTH = 50;
+const isWholeNumber = (v: string) => /^\d+$/.test(v.trim());
+
+// 보내기 전에 칸별로 검사한다. 빈 객체면 보내도 된다.
+export function validateNurseDraft(d: NurseDraft): NurseDraftErrors {
+  const errors: NurseDraftErrors = {};
+  const thisYear = Number(todayKst().yearMonth.slice(0, 4));
+  if (!d.name.trim()) errors.name = "이름을 입력해 주세요.";
+  else if (d.name.trim().length > NAME_MAX_LENGTH) errors.name = `이름은 ${NAME_MAX_LENGTH}자까지 쓸 수 있어요.`;
+  if (!d.hireYear.trim()) errors.hireYear = "입사 연도를 입력해 주세요.";
+  else if (!isWholeNumber(d.hireYear) || Number(d.hireYear) < MIN_JOINED_YEAR || Number(d.hireYear) > thisYear)
+    errors.hireYear = `입사 연도는 ${MIN_JOINED_YEAR}년부터 ${thisYear}년까지 넣을 수 있어요.`;
+  const years = d.careerYears.trim() || "0";
+  const months = d.careerMonths.trim() || "0";
+  if (!isWholeNumber(years) || !isWholeNumber(months) || Number(months) > 11)
+    errors.career = "총 경력은 0년 이상, 개월은 0~11 사이로 넣어 주세요.";
+  if (!d.periodStart) errors.periodStart = "소속 시작일을 골라 주세요.";
+  return errors;
+}
+
+// 서버가 칸 단위로 거절했을 때(400 VALIDATION_ERROR fieldErrors) 화면의 칸으로 옮긴다. 옮기지 못한 것은 빈 객체.
+const SERVER_FIELD: Record<string, NurseDraftField> = {
+  name: "name",
+  joinedYear: "hireYear",
+  careerMonths: "career",
+  affiliationStart: "periodStart",
+};
+export function serverNurseErrors(e: unknown): NurseDraftErrors {
+  const errors: NurseDraftErrors = {};
+  if (!(e instanceof ApiError)) return errors;
+  for (const f of e.fieldErrors ?? []) {
+    const field = SERVER_FIELD[f.field];
+    if (field && !errors[field]) errors[field] = `서버가 이 값을 받지 않았어요 (${f.reason}). 다시 확인해 주세요.`;
+  }
+  return errors;
+}
 
 export function emptyNurseDraft(name = ""): NurseDraft {
   return {

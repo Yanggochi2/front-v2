@@ -3,12 +3,21 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import RnButton from "@/components/ui/RnButton";
-import { emptyNurseDraft, toNurseCreate, toNurseDraft, toNursePatch } from "@/lib/nurseDraft";
+import { emptyNurseDraft, serverNurseErrors, toNurseCreate, toNurseDraft, toNursePatch, validateNurseDraft } from "@/lib/nurseDraft";
 import { formatApiError } from "@/lib/formatApiError";
 import { createNurse, updateNurse } from "@/services/nursesApi";
-import type { NurseDetail, NurseDraft } from "@/types/nurses.type";
+import type { NurseDetail, NurseDraft, NurseDraftErrors, NurseDraftField } from "@/types/nurses.type";
 import NurseProfileFields from "./NurseProfileFields";
 import NurseRegisteredDialog from "./NurseRegisteredDialog";
+
+// 입력값 → 오류를 보여 주는 칸 (총 경력은 년·개월이 한 칸)
+const FIELD_OF: Partial<Record<keyof NurseDraft, NurseDraftField>> = {
+  name: "name",
+  hireYear: "hireYear",
+  careerYears: "career",
+  careerMonths: "career",
+  periodStart: "periodStart",
+};
 
 type Props = {
   nurse?: NurseDetail;
@@ -22,11 +31,19 @@ export default function NurseForm({ nurse, newNurses }: Props) {
   const [draft, setDraft] = useState<NurseDraft>(initialDraft);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<NurseDraftErrors>({});
   const [registered, setRegistered] = useState<string | null>(null);
   const router = useRouter();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // 브라우저 기본 말풍선 대신 칸 아래에 문구를 보여 준다 (form noValidate)
+    const found = validateNurseDraft(draft);
+    setFieldErrors(found);
+    if (Object.keys(found).length > 0) {
+      setError("빨간 칸을 확인해 주세요.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -42,6 +59,7 @@ export default function NurseForm({ nurse, newNurses }: Props) {
         setRegistered(draft.name.trim());
       }
     } catch (err) {
+      setFieldErrors(serverNurseErrors(err));
       setError(formatApiError(err));
     } finally {
       setBusy(false);
@@ -49,12 +67,21 @@ export default function NurseForm({ nurse, newNurses }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-8">
+    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-8">
       <div className="flex items-start gap-6">
         <div className="grid w-full max-w-[904px] flex-1 grid-cols-2 gap-x-6 gap-y-7 rounded-[24px] border border-line bg-white shadow-card p-8">
           <NurseProfileFields
             draft={draft}
-            onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+            errors={fieldErrors}
+            onChange={(patch) => {
+              setDraft((d) => ({ ...d, ...patch }));
+              // 고친 칸의 오류 문구는 바로 지운다
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                for (const key of Object.keys(patch)) delete next[FIELD_OF[key as keyof NurseDraft] as NurseDraftField];
+                return next;
+              });
+            }}
             newNurses={newNurses?.filter((n) => n.id !== nurse?.id) ?? null}
           />
         </div>
@@ -101,6 +128,7 @@ export default function NurseForm({ nurse, newNurses }: Props) {
             setDraft(emptyNurseDraft());
             setRegistered(null);
             setError(null);
+            setFieldErrors({});
           }}
         />
       ) : null}

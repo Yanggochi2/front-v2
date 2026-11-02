@@ -45,6 +45,10 @@ export type NurseDraft = {
   periodStart: string;
 };
 
+/** 간호사 폼에서 검사하는 칸 (총 경력은 년·개월을 한 칸으로 본다) */
+export type NurseDraftField = "name" | "hireYear" | "career" | "periodStart";
+export type NurseDraftErrors = Partial<Record<NurseDraftField, string>>;
+
 export type NurseListResult = {
   items: Nurse[];
   activeCount: number;
