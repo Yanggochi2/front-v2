@@ -26,7 +26,7 @@ export type SharedScheduleData = {
 };
 
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
-// 공휴일 API는 관리 링크가 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
+// 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
 export async function getSharedSchedule(token: string, sort?: ApiSharedSort): Promise<SharedScheduleData> {
   const s = await apiRequest<ApiSharedSchedule>(`/shared/schedules/${encodeURIComponent(token)}`, {
     query: { sort },
