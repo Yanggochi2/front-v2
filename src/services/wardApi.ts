@@ -1,7 +1,7 @@
 import { apiRequest, apiRequestList } from "@/lib/apiClient";
 import { getRules, patchRule } from "@/services/rulesApi";
 import type { WardSettingsData } from "@/types/ward.type";
-import type { ApiWard, ManagementLink } from "@/types/wardApi.type";
+import type { ApiWard } from "@/types/wardApi.type";
 
 // GET /wards/me (+ NUR-02로 인원 수). 병동 설정 화면.
 export async function getWardSettings(): Promise<WardSettingsData> {
@@ -31,8 +31,3 @@ export async function updateRequiredStaff(next: WardSettingsData["dailyRequired"
   return { D: Number(p.D ?? next.D), E: Number(p.E ?? next.E), N: Number(p.N ?? next.N) };
 }
 
-// POST /wards/me/management-link (10/26 계약). 새 관리 링크를 만들고, 이전 링크는 바로 쓸 수 없게 된다.
-// 비밀값을 돌려주는 요청이라 Idempotency-Key를 보내지 않는다.
-export async function rotateManagementLink(): Promise<ManagementLink> {
-  return apiRequest<ManagementLink>("/wards/me/management-link", { method: "POST" });
-}

@@ -19,15 +19,22 @@
 월별 보기(`월별 보기 · 사이드바 열림`)는 별도 경로 없이 `/schedule?view=month`(주간/월간 보기 전환)로 둔다.
 `/schedule`을 보기·기간 없이 처음 열면 월간으로 열린다. 주간 보기와 주 선택 링크는 `ym`·`week`를 달고 있어 그대로 주간이다.
 그 달 근무표가 없으면(404) 자동 생성으로 보내는 안내를 보여 준다.
-사이드바 화면은 모두 관리 링크로 들어온 수간호사 화면이다 (10/26 계약, 로그인·역할 구분 없음). 관리 토큰이 없거나 바뀌면(401) `/manage`로 보낸다.
+사이드바 화면은 모두 로그인한 수간호사 화면이다 (10/26 계약, 일반 간호사 계정 없음·역할 구분 없음). 로그인하지 않았으면(401) `/login`, 병동이 없으면 `/onboarding/create-ward`로 보낸다.
 
 ## 사이드바 없음 — `src/app/(onboarding)/`
 | 경로 | 화면 |
 |---|---|
-| `/manage` | 관리 링크 진입. `#token=`을 저장하고 주소창에서 지운 뒤 `/schedule`로 보낸다. 토큰이 없거나 바뀌었으면 안내(새 병동 만들기) |
-| `/onboarding/create-ward` | 병동 만들기 (`POST /workspaces`). 만든 뒤 관리 링크를 보여 주고 저장하게 한다 |
+| `/onboarding/create-ward` | 병동 만들기 (`POST /workspaces`). 로그인한 계정이 그 병동의 수간호사가 되고, 만든 뒤 `/schedule`로 간다. 로그인 전이면 `/login`, 이미 병동이 있으면 `/schedule`로 보낸다 |
 
-- 로그인·회원가입·소속 선택·승인 대기·신청·가입 승인·마이페이지(`/login`, `/signup`, `/onboarding/select-ward`, `/onboarding/pending`, `/requests`, `/approvals`, `/me`)는 10/26 범위 변경으로 없앴다.
+- 소속 선택·승인 대기·신청·가입 승인·마이페이지(`/onboarding/select-ward`, `/onboarding/pending`, `/requests`, `/approvals`, `/me`)는 10/26 범위 변경으로 없앴다.
+
+## 로그인·회원가입 — `src/app/(auth)/`
+| 경로 | 화면 |
+|---|---|
+| `/login` | 수간호사 로그인. 성공하면 `GET /me`로 병동이 있으면 `/schedule`, 없으면 `/onboarding/create-ward` |
+| `/signup` | 수간호사 회원가입. 가입하면 바로 로그인된 상태로 `/onboarding/create-ward`로 간다 |
+
+- 로그아웃은 사이드바 아래 계정 칸에 있다. 로그아웃 후 `/login`.
 
 ## 공유 링크 — `src/app/(shared)/`
 | 경로 | 화면 |
@@ -43,4 +50,4 @@
 
 ## 진입
 - 앱의 시작 화면은 `/schedule`이다. 사이드바를 닫았을 때의 로고도 `/schedule`로 간다.
-- 랜딩의 "시작하기"는 `/onboarding/create-ward`, "관리 화면"은 `/manage`로 간다.
+- 랜딩의 "시작하기"는 `/signup`, "로그인"은 `/login`으로 간다.

@@ -1,6 +1,5 @@
 import AdminButton from "@/components/ui/AdminButton";
 import type { ReactNode } from "react";
-import ManagementLinkSection from "./ManagementLinkSection";
 import RequiredStaffSection from "./RequiredStaffSection";
 import type { WardSettingsData } from "@/types/ward.type";
 
@@ -42,12 +41,6 @@ export default function WardSettingsView({ ward }: { ward: WardSettingsData | nu
         ) : (
           <p className="text-[18px] leading-normal font-bold text-ink">-</p>
         )}
-      </Card>
-      <Card title="관리 링크">
-        <ManagementLinkSection />
-        <p className="text-[16px] leading-normal font-medium text-ink-sub">
-          로그인 대신 이 링크로 병동에 들어와요. 링크를 가진 사람은 누구나 근무표를 고칠 수 있으니 믿을 수 있는 사람에게만 나눠 주세요.
-        </p>
       </Card>
     </>
   );
