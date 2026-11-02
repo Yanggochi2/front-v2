@@ -202,7 +202,7 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
     // 위반 목록과 승인된 희망 오프는 수간호사만 받는다. 실패해도 시트는 보여 준다.
     const offJob = getApprovedOffKeys(schedule.yearMonth).catch(() => approvedOff);
     try {
-      violations = (await getScheduleViolations(schedule.id, { severity: "HARD", size: 100 })).data;
+      violations = await getAllHardViolations(schedule.id);
     } catch {}
     approvedOff = await offJob;
   }
@@ -260,6 +260,18 @@ export function getScheduleCoverage(scheduleId: string): Promise<ApiCoverage[]> 
 // SCH-06 (수간호사)
 export function getScheduleViolations(scheduleId: string, query: ApiViolationQuery = {}) {
   return apiRequestList<ApiViolation>(`${SCHEDULES}/${scheduleId}/violations`, { query });
+}
+
+// 확정을 막는 위반(HARD) 전부. 한 페이지는 최대 100건이라, 넘으면 나머지 페이지도 받아 합친다 (위반 목록·건수가 잘리지 않게).
+async function getAllHardViolations(scheduleId: string): Promise<ApiViolation[]> {
+  const query = { severity: "HARD", size: 100 } as const;
+  const first = await getScheduleViolations(scheduleId, query);
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, first.meta.totalPages - 1) }, (_, i) =>
+      getScheduleViolations(scheduleId, { ...query, page: first.meta.page + 1 + i }),
+    ),
+  );
+  return [first, ...rest].flatMap((r) => r.data);
 }
 
 // ---- 변경 ----
