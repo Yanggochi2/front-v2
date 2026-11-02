@@ -11,7 +11,7 @@ export type NavModel = {
 };
 
 // 사이드바와 상단 메뉴(사이드바 닫힘)가 같은 메뉴를 쓴다.
-// 10/26 계약부터 관리 링크로 들어온 수간호사 화면 하나라 역할별 메뉴가 없다.
+// 10/26 계약부터 로그인하는 사람은 수간호사뿐이라 역할별 메뉴가 없다.
 const NAV: NavModel = {
   mainItems: [
     { label: "근무표", href: "/schedule", exact: true },

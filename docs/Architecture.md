@@ -12,7 +12,7 @@
 src/
   app/                 라우트(page, layout만). 조립만 한다.
     (app)/             사이드바 있는 화면
-    (onboarding)/      사이드바 없는 화면 (병동 만들기, 관리 링크 진입 /manage)
+    (onboarding)/      사이드바 없는 화면 (병동 만들기)
     (shared)/          로그인 없이 보는 공유 근무표 (/shared/[token])
     (marketing)/       서비스 소개 랜딩 (/)
   components/
@@ -50,13 +50,13 @@ src/
 `src/app/globals.css`의 `@theme`에 모았다. 값은 Figma 라이트 화면 기준이며 `docs/design-system.md`와 다른 부분은 Figma를 따랐다.
 (예: 포인트 컬러 #a65468, 근무 종류별 칩 색)
 
-## 인증 (관리 링크)
-10/26 계약부터 로그인이 없다. 수간호사는 관리 링크(`/manage#token=…`)로 들어온다.
-- `lib/managementToken.ts`: 토큰을 이 프론트 출처의 쿠키(SameSite=Strict)에 저장·삭제한다.
-- `lib/apiClient.ts`: 브라우저에서는 쿠키를, 서버 컴포넌트에서는 요청 쿠키(`next/headers`)를 읽어 `Authorization: Bearer`로 보낸다. 백엔드는 쿠키를 읽지 않으므로 `credentials: "omit"`.
-- (app) 레이아웃은 `GET /wards/me`로 병동 정보를 받는다. 401이면 `/manage`로 보내고, 서버에 닿지 못하면 화면 틀만 보여 준다.
+## 인증 (수간호사 로그인)
+10/26 계약부터 계정은 수간호사만 있다. 일반 간호사는 계정 없이 공유 링크로 본다.
+- 세션은 백엔드가 내려 주는 HttpOnly 쿠키다. `lib/apiClient.ts`는 `credentials: "include"`로 보내고, 서버 컴포넌트에서는 요청 쿠키(`next/headers`)를 그대로 넘긴다. 상태 변경 요청에는 `CSRF_TOKEN` 쿠키 값을 `X-CSRF-Token`으로 붙인다.
+- (app) 레이아웃은 `GET /me`로 사람·병동 정보를 받는다. 401이면 `/login`, 병동이 없으면 `/onboarding/create-ward`로 보내고, 서버에 닿지 못하면 화면 틀만 보여 준다.
+- 로그아웃은 사이드바 아래 계정 칸(`hooks/useLogout.ts`).
 - 역할 구분이 없어 사이드바 메뉴는 하나다 (`hooks/useNavModel.ts`).
-- 공유 링크 조회(`services/sharingApi.ts`의 `getSharedSchedule`)는 `anonymous: true`로 불러 관리 토큰을 붙이지 않는다.
+- 공유 링크 조회(`services/sharingApi.ts`의 `getSharedSchedule`)는 `anonymous: true`로 불러 수간호사 세션 쿠키를 보내지 않는다.
 
 ## 근무표·자동 생성 서비스
 - `services/scheduleApi.ts`(조회·셀 변경·확정·내보내기), `services/generationApi.ts`(자동 생성 GEN-01~05). 항상 실제 API를 호출한다.

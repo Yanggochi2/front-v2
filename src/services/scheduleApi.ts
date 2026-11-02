@@ -176,7 +176,7 @@ function sheetTitle(view: "week" | "month", yearMonth: string, week: number, now
 
 // ---- 조회 ----
 
-// view는 주/월 보기 전환 값이다. 관리 링크로 들어온 수간호사 화면만 있다 (10/26 계약).
+// view는 주/월 보기 전환 값이다. 로그인한 수간호사 화면만 있다 (10/26 계약).
 export async function getSchedulePage(params: SchedulePageParams = {}): Promise<SchedulePageData> {
   const { yearMonth, week } = resolvePeriod(params.ym, params.week);
   const periodLabel = `${yearMonth.slice(0, 4)}년 ${Number(yearMonth.slice(5))}월`;
