@@ -61,7 +61,7 @@ const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
 };
 const OFFLINE_NOTE = "서버에 연결되면 고칠 수 있어요";
 
-// 관리 링크로 들어온 수간호사의 근무표 화면. 간호사는 공유 링크로 확정본만 본다 (10/26 계약).
+// 로그인한 수간호사의 근무표 화면. 간호사는 공유 링크로 확정본만 본다 (10/26 계약).
 export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const router = useRouter();
   const editor = useScheduleEditor(sheet);

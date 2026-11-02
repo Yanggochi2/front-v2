@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSubmit } from "@/hooks/useSubmit";
 import { todayKst } from "@/lib/schedulePeriod";
@@ -8,11 +9,9 @@ import OnboardingButton from "@/components/ui/OnboardingButton";
 import OnboardingCard from "@/components/ui/OnboardingCard";
 import OnboardingInput from "@/components/ui/OnboardingInput";
 import type { CreateWardDefaults, ShiftKind } from "@/types/onboarding.type";
-import type { ManagementLink } from "@/types/wardApi.type";
-import ManagementLinkIssued from "./ManagementLinkIssued";
 import StaffStepper from "./StaffStepper";
 
-type Props = { defaults: CreateWardDefaults };
+type Props = { defaults: CreateWardDefaults; userName: string };
 
 const SHIFTS: ShiftKind[] = ["D", "E", "N"];
 const labelClass = "text-lg font-bold text-ink";
@@ -20,13 +19,14 @@ const THIS_YEAR = Number(todayKst().yearMonth.slice(0, 4));
 
 const toInt = (v: string) => (v.trim() === "" ? NaN : Number(v));
 
-export default function CreateWardForm({ defaults }: Props) {
+export default function CreateWardForm({ defaults, userName }: Props) {
+  const router = useRouter();
   const [hospital, setHospital] = useState("");
   const [ward, setWard] = useState("");
   const [staff, setStaff] = useState(defaults.requiredStaff);
   const [presetId, setPresetId] = useState(defaults.defaultPresetId);
   // 만드는 사람이 이 병동의 수간호사로 함께 등록된다 (POST /workspaces)
-  const [headName, setHeadName] = useState("");
+  const [headName, setHeadName] = useState(userName);
   const [joinedYear, setJoinedYear] = useState("");
   const [careerYears, setCareerYears] = useState("");
   const [careerMonths, setCareerMonths] = useState("0");
@@ -34,7 +34,6 @@ export default function CreateWardForm({ defaults }: Props) {
     const { yearMonth, day } = todayKst();
     return `${yearMonth}-${String(day).padStart(2, "0")}`;
   });
-  const [issued, setIssued] = useState<ManagementLink | null>(null);
 
   const { submit, loading, error } = useSubmit();
   const year = toInt(joinedYear);
@@ -50,23 +49,23 @@ export default function CreateWardForm({ defaults }: Props) {
 
   async function handleSubmit() {
     if (!canSubmit) return;
-    await submit(async () =>
-      setIssued(
-        await createWorkspace({
-          hospitalName: hospital.trim(),
-          wardName: ward.trim(),
-          headName: headName.trim(),
-          joinedYear: year,
-          careerMonths: career,
-          affiliationStart,
-          requiredStaff: staff,
-          rulePreset: presetId,
-        }),
-      ),
+    const ok = await submit(() =>
+      createWorkspace({
+        hospitalName: hospital.trim(),
+        wardName: ward.trim(),
+        headName: headName.trim(),
+        joinedYear: year,
+        careerMonths: career,
+        affiliationStart,
+        requiredStaff: staff,
+        rulePreset: presetId,
+      }),
     );
+    if (ok) {
+      router.replace("/schedule");
+      router.refresh();
+    }
   }
-
-  if (issued) return <ManagementLinkIssued link={issued} />;
 
   return (
     <OnboardingCard className="flex w-full max-w-180 flex-col gap-[22px] px-10 py-9">
