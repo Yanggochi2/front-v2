@@ -2,7 +2,7 @@
 import type { PageMeta } from "./api.type";
 import type { ApiDutyRole } from "./nursesApi.type";
 
-// TODO(🔶 ED 교육): ED 코드는 미확정. 타입에서만 받아 주고 입력 UI는 만들지 않는다.
+// ED는 교육·학회. 10/26 계약부터 연차(AL)와 함께 직접 입력하고, 자동 생성 때 항상 그대로 남는다.
 export type ApiDutyCode = "D" | "E" | "N" | "O" | "AL" | "ED";
 export type ScheduleStatus = "DRAFT" | "GENERATING" | "CONFIRMED" | "ARCHIVED";
 
@@ -58,9 +58,8 @@ export type ApiSchedule = {
   confirmedAt: string | null;
 };
 
-// SCH-04
+// SCH-04. 소속 기간 밖 칸은 서버가 거절한다.
 export type ApiCellChange = { nurseId: string; date: string; dutyCode: ApiDutyCode | null };
-// AL 직접 입력은 금지다 (docs/API.md). 호출부에서 막는다.
 export type ApiCellBulkPatch = { baseVersion: number; changes: ApiCellChange[] };
 export type ApiCellBulkPatchResult = {
   changedCells: ApiScheduleCell[];
@@ -99,8 +98,11 @@ export type ApiGenerationJob = {
   error?: string | null; // 실패(FAILED) 사유. 명세에는 없고 백엔드 응답에 있다
 };
 
+// 자동 생성 때 그대로 둘 칸. 근무 코드 없이 칸 위치만 보낸다 (10/26 계약 4장). AL·ED는 넣지 않아도 남는다.
+export type ApiFixedCell = { nurseId: string; date: string };
+
 export type ApiGenerationStart = {
-  fixedCells: ApiCellChange[]; // TODO: fixedCells 원소 모양은 명세에 없음. 셀 변경과 같다고 가정(추측)
+  fixedCells: ApiFixedCell[];
   maxSeconds: number;
 };
 export type ApiGenerationStop = { applyBestResult: boolean };

@@ -23,7 +23,8 @@ import ScheduleToolbar from "./ScheduleToolbar";
 
 type Popover = { row: number; col: number; top: number; left: number; above: boolean };
 
-const POPOVER_WIDTH = 386;
+// 근무 버튼 6개(D·E·N·OFF·연차·교육)가 한 줄에 들어가는 너비
+const POPOVER_WIDTH = 470;
 const POPOVER_HEIGHT = 196;
 // 위반 메시지 한 줄당 늘어나는 팝오버 높이 (위/아래 배치 계산용)
 const POPOVER_PROBLEM_LINE = 26;
@@ -41,6 +42,8 @@ const BRUSH_HINT: Record<EditableDutyCode, string> = {
   E: "누르는 칸마다 E 이브닝으로 바뀌어요",
   N: "누르는 칸마다 N 나이트로 바뀌어요",
   O: "누르는 칸마다 OFF 휴무로 바뀌어요",
+  AL: "누르는 칸마다 연차로 바뀌어요",
+  ED: "누르는 칸마다 교육으로 바뀌어요",
 };
 
 const NAV_BTN =
@@ -271,6 +274,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
                 yearMonth={sheet.yearMonth}
                 status={api.status}
                 hardViolationCount={editor.issues.length}
+                // 넣어 둔 근무가 있고 빈 칸이 남아 있으면, 다시 짤 때 넣어 둔 칸을 지키는 쪽을 기본으로 한다
+                keepEnteredDefault={api.hasEnteredCells && api.hasEmptyCells}
               />
             </div>
           </div>
