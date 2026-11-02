@@ -2,6 +2,7 @@ import { GENERATE_MAX_SECONDS, GENERATION_STAGES } from "@/constants/schedule.co
 import { ApiError, apiRequest } from "@/lib/apiClient";
 import type { GenerationFailure, GenerationProgress, GenerationStep } from "@/types/schedule.type";
 import type {
+  ApiFixedCell,
   ApiGenerationJob,
   ApiGenerationPartialApply,
   ApiGenerationRelaxations,
@@ -55,9 +56,33 @@ export function applyPartialResult(jobId: string, body: ApiGenerationPartialAppl
 
 // ---- 생성 시작 흐름 ----
 
+// 자동 생성 때 그대로 둘 칸: 지금 근무가 들어 있는 칸(종이 달력의 오프처럼 미리 넣어 둔 근무).
+// 연차·교육(AL·ED)은 넣지 않아도 서버가 항상 남긴다 (10/26 계약 4장).
+function enteredCells(schedule: ApiSchedule): ApiFixedCell[] {
+  return schedule.cells
+    .filter((c) => c.dutyCode !== null && c.dutyCode !== "AL" && c.dutyCode !== "ED")
+    .map((c) => ({ nurseId: c.nurseId, date: c.date }));
+}
+
+// 자동 생성 시작 화면의 "넣어 둔 칸 지키기" 기본값용. 근무표가 없으면 null.
+export async function getGenerateStartInfo(yearMonth: string): Promise<{ entered: number; empty: number } | null> {
+  try {
+    const schedule = await getScheduleByYearMonth(yearMonth);
+    if (schedule.status !== "DRAFT") return null;
+    return {
+      entered: enteredCells(schedule).length,
+      empty: schedule.cells.filter((c) => c.dutyCode === null && c.editable).length,
+    };
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 // 그 달 근무표를 찾고, 없으면 빈 근무표를 만든 뒤 자동 생성을 시작한다.
+// keepEntered면 지금 근무가 들어 있는 칸은 그대로 두고 빈 칸만 채운다. 아니면 연차·교육만 남기고 다시 짠다.
 // 확정된 근무표는 확정을 취소해야 다시 짤 수 있다.
-export async function startGenerationForMonth(yearMonth: string, idempotencyKey: string): Promise<ApiGenerationJob> {
+export async function startGenerationForMonth(yearMonth: string, idempotencyKey: string, keepEntered = false): Promise<ApiGenerationJob> {
   let schedule: ApiSchedule;
   try {
     schedule = await getScheduleByYearMonth(yearMonth);
@@ -68,8 +93,8 @@ export async function startGenerationForMonth(yearMonth: string, idempotencyKey:
   if (schedule.status !== "DRAFT") {
     throw new ApiError(409, { code: "INVALID_SCHEDULE_STATE", message: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요." });
   }
-  // TODO: 고정 셀(fixedCells)을 고르는 UI는 아직 없다.
-  return startGeneration(schedule.id, { fixedCells: [], maxSeconds: GENERATE_MAX_SECONDS }, idempotencyKey);
+  const fixedCells = keepEntered ? enteredCells(schedule) : [];
+  return startGeneration(schedule.id, { fixedCells, maxSeconds: GENERATE_MAX_SECONDS }, idempotencyKey);
 }
 
 // 작업 상태별로 이동할 화면. 아직 진행 중이면 진행 화면.

@@ -156,13 +156,15 @@ function toSheet(
     activeWeek,
     weekCount,
     lastSavedLabel: "-", // TODO: 마지막 수정 시각 필드가 명세에 없다
-    unassigned: schedule.cells.length > 0 && schedule.cells.every((c) => c.dutyCode === null || c.dutyCode === "AL"),
+    unassigned: schedule.cells.length > 0 && schedule.cells.every((c) => c.dutyCode === null || c.dutyCode === "AL" || c.dutyCode === "ED"),
     api: {
       scheduleId: schedule.id,
       version: schedule.version,
       dates,
       editable: schedule.status === "DRAFT",
       status: schedule.status,
+      hasEnteredCells: schedule.cells.some((c) => c.dutyCode !== null && c.dutyCode !== "AL" && c.dutyCode !== "ED"),
+      hasEmptyCells: schedule.cells.some((c) => c.dutyCode === null && c.editable),
     },
   };
 }
@@ -226,7 +228,7 @@ export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetD
     weekCount,
     lastSavedLabel: "-",
     unassigned: false,
-    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT" },
+    api: { scheduleId: "", version: 0, dates, editable: false, status: "DRAFT", hasEnteredCells: false, hasEmptyCells: false },
   };
 }
 
@@ -270,9 +272,8 @@ async function getAllHardViolations(scheduleId: string): Promise<ApiViolation[]>
 // ---- 변경 ----
 
 // SCH-04. 전체 성공/전체 실패. 409 VERSION_CONFLICT, 423 SCHEDULE_LOCKED, 422 PROTECTED_CELL은 ApiError로 던진다.
-// AL 직접 입력은 금지라 여기서도 막는다. 잠금 토큰은 P2(잠금 기능)에서 넘긴다.
+// 잠금 토큰은 P2(잠금 기능)에서 넘긴다.
 export function patchScheduleCells(scheduleId: string, body: ApiCellBulkPatch, scheduleLockToken?: string) {
-  if (body.changes.some((c) => c.dutyCode === "AL")) throw new Error("AL은 직접 입력할 수 없어요.");
   return apiRequest<ApiCellBulkPatchResult>(`${SCHEDULES}/${scheduleId}/cells`, {
     method: "PATCH",
     body,

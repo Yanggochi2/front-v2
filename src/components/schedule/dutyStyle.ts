@@ -11,12 +11,12 @@ export const DUTY_STYLE: Record<
   N: { cell: "bg-duty-n text-duty-n-ink font-bold", edge: "border-duty-n-edge", ring: "ring-1 ring-duty-n-edge/35 ring-inset", weekLabel: "N", monthLabel: "N", brushLabel: "N 나이트" },
   O: { cell: "bg-duty-off text-duty-off-ink font-medium", edge: "border-duty-off-edge", ring: "", weekLabel: "OFF", monthLabel: "O", brushLabel: "OFF 휴무" },
   AL: { cell: "bg-duty-al text-duty-al-ink font-bold", edge: "border-duty-al-edge", ring: "ring-1 ring-duty-al-edge/40 ring-inset", weekLabel: "연차", monthLabel: "AL", brushLabel: "연차" },
-  // TODO(🔶 ED 교육): 미확정. 표시 스타일만 임시로 OFF와 같게 둔다. 입력 UI 없음.
+  // TODO: 교육(ED) 칸 색은 시안이 없어 임시로 OFF와 같게 둔다 (글자 "교육"/"ED"로 구분).
   ED: { cell: "bg-duty-off text-duty-off-ink font-medium", edge: "border-duty-off-edge", ring: "", weekLabel: "교육", monthLabel: "ED", brushLabel: "교육" },
 };
 
-// 직접 입력할 수 있는 코드. AL(연차)은 신청 승인으로만 들어가므로 직접 입력할 수 없다 (docs/API.md).
-export const DUTY_ORDER: EditableDutyCode[] = ["D", "E", "N", "O"];
+// 직접 입력할 수 있는 코드. 10/26 계약부터 연차(AL)·교육(ED)도 수간호사가 종이 달력을 보고 넣는다.
+export const DUTY_ORDER: EditableDutyCode[] = ["D", "E", "N", "O", "AL", "ED"];
 
 // 브러시 버튼 배경 (OFF는 Figma에서 회색 칩 색)
 export const BRUSH_BG: Record<DutyCode, string> = {
