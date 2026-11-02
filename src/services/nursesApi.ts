@@ -72,21 +72,6 @@ export async function getPreceptorCandidates(): Promise<{ id: string; name: stri
   }
 }
 
-// 근무표 행 정렬용. 근무표 nurses[]에 없는 수간호사 여부·총경력을 NUR-02에서 채운다. 수간호사 화면에서만 부른다.
-// 의도한 폴백: 실패하면 빈 맵을 돌려주고, 정렬 정보가 없는 행은 맨 뒤(같으면 이름순)로 간다. 근무표는 그대로 보인다.
-// 한계: 100명까지만 받는다. 넘으면 나머지는 정렬 정보 없이 맨 뒤로 간다.
-// TODO(Yanggochi2/backend#76): 근무표 응답에 role·careerMonths가 오면 이 요청은 뺀다
-export async function getNurseSortInfoMap(): Promise<Map<string, Pick<ApiNurse, "role" | "careerMonths">>> {
-  try {
-    const list = await apiRequestList<ApiNurse>(NURSES_PATH, {
-      query: { includeRetired: true, size: 100 },
-    });
-    return new Map(list.data.map((n) => [n.id, { role: n.role, careerMonths: n.careerMonths }]));
-  } catch {
-    return new Map();
-  }
-}
-
 // NUR-03
 export async function getNurse(id: string): Promise<NurseDetail> {
   return mapNurseDetail(await apiRequest<ApiNurse>(`${NURSES_PATH}/${encodeURIComponent(id)}`));

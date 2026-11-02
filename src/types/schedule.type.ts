@@ -52,6 +52,7 @@ export type ScheduleRow = {
 
 export type ScheduleSheetData = {
   view: ScheduleView;
+  defaultSort: ScheduleRowSort; // 근무표 응답의 defaultSort (없으면 숙련도순)
   title: string;
   days: ScheduleDay[];
   rows: ScheduleRow[];
@@ -93,6 +94,7 @@ export type SchedulePageParams = {
   view?: string;
   ym?: string;
   week?: string;
+  entry?: boolean; // 보기·기간 없이 처음 열었다. 처음 보기는 근무표 응답의 defaultView를 따른다
 };
 
 export type GenerationStep = {

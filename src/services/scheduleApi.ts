@@ -10,7 +10,6 @@ import type {
   ApiViolation,
   ApiViolationQuery,
 } from "@/types/scheduleApi.type";
-import { getNurseSortInfoMap } from "./nursesApi";
 import { getHolidays } from "./rulesApi";
 import type {
   CoverageDuty,
@@ -23,7 +22,6 @@ import type {
   SchedulePageData,
   SchedulePageParams,
 } from "@/types/schedule.type";
-import type { NurseRole } from "@/types/nurses.type";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const SCHEDULES = "/wards/me/schedules";
@@ -112,7 +110,6 @@ function toSheet(
   schedule: ApiSchedule,
   violations: ApiViolation[],
   holidays: Map<string, string>,
-  sortInfo: Map<string, { role?: NurseRole; careerMonths?: number | null }>,
   view: "week" | "month",
   activeWeek: number,
 ): ScheduleSheetData {
@@ -128,9 +125,9 @@ function toSheet(
       nurseKey: n.id,
       name: n.name,
       group: n.skillGroup ?? undefined,
-      role: sortInfo.get(n.id)?.role,
+      role: n.role,
       dutyRole: n.dutyRole,
-      careerMonths: n.careerMonths ?? sortInfo.get(n.id)?.careerMonths ?? undefined,
+      careerMonths: n.careerMonths ?? undefined,
       cells: dates.map((d) => {
         const c = cellMap.get(`${n.id}|${d}`);
         // 칸이 없으면 소속 기간 밖으로 보고 편집 불가로 둔다 (추측).
@@ -145,6 +142,7 @@ function toSheet(
 
   return {
     view,
+    defaultSort: schedule.defaultSort === "name" ? "name" : "skill",
     title: sheetTitle(view, schedule.yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, holidays)),
     rows: applyViolationFlags(rows, dates, violations),
@@ -194,21 +192,22 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
 
   let violations: ApiViolation[] = [];
   const holidaysJob = getHolidayNames(schedule.yearMonth);
-  const sortInfoJob = getNurseSortInfoMap();
   if (schedule.status === "DRAFT") {
     // 작성 중일 때만 위반 목록을 받는다. 실패해도 시트는 보여 준다.
     try {
       violations = await getAllHardViolations(schedule.id);
     } catch {}
   }
-  const [holidays, sortInfo] = await Promise.all([holidaysJob, sortInfoJob]);
-  const view = params.view === "month" ? "month" : "week";
-  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, sortInfo, view, week) };
+  const holidays = await holidaysJob;
+  // 보기를 고르지 않고 처음 열면 근무표 응답의 defaultView(10/26 계약: 월간)를 따른다
+  const view = params.view === "month" || params.view === "week" ? params.view : params.entry ? (schedule.defaultView ?? "month") : "week";
+  return { kind: "sheet", sheet: toSheet(schedule, violations, holidays, view, week) };
 }
 
 // 서버에 연결하지 못했을 때 보여 줄 빈 근무표 틀. 날짜 열은 실제 오늘 날짜로 만들고 간호사 행은 없다.
 export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetData {
-  const v = params.view === "month" ? "month" : "week";
+  // 서버에 닿지 못해 defaultView를 모르면, 처음 열 때는 계약의 기본값(월간)으로 둔다
+  const v = params.view === "month" || (params.view !== "week" && params.entry) ? "month" : "week";
   const { yearMonth, week: activeWeek } = resolvePeriod(params.ym, params.week);
   const { yearMonth: nowYm, day } = todayKst();
   const all = monthDates(yearMonth);
@@ -217,6 +216,7 @@ export function getOfflineSheet(params: SchedulePageParams = {}): ScheduleSheetD
   const today = `${nowYm}-${String(day).padStart(2, "0")}`;
   return {
     view: v,
+    defaultSort: "skill",
     title: sheetTitle(v, yearMonth, activeWeek, nowYm, day),
     days: dates.map((d) => toDay(d, today, new Map())),
     rows: [],

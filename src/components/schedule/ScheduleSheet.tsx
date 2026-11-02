@@ -72,7 +72,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const { rows, setDuty } = editor;
   const [brush, setBrush] = useState<EditableDutyCode | null>(null);
   const [checkOnly, setCheckOnly] = useState(false);
-  const [sort, setSort] = useState<ScheduleRowSort>("skill");
+  const [sort, setSort] = useState<ScheduleRowSort>(sheet.defaultSort);
   const [popover, setPopover] = useState<Popover | null>(null);
   // 위반 목록에서 고른 날(열). 다음에 아무 데나 누르거나 Esc를 누르면 지운다.
   const [spotCol, setSpotCol] = useState<number | null>(null);

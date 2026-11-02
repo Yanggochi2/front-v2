@@ -14,10 +14,11 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 export default async function SchedulePage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const params = {
-    // 보기·기간 없이 처음 열면 월간으로 연다. 주간 링크는 ym·week를 달고 오므로 그대로 주간이다.
-    view: first(sp.view) ?? (!sp.ym && !sp.week ? "month" : undefined),
+    view: first(sp.view),
     ym: first(sp.ym),
     week: first(sp.week),
+    // 보기·기간 없이 처음 열면 근무표의 기본 보기(월간)로 연다. 주간 링크는 ym·week를 달고 오므로 그대로 주간이다.
+    entry: !sp.view && !sp.ym && !sp.week,
   };
   let data: SchedulePageData | null = null;
   try {
