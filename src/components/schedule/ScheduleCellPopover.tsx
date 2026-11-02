@@ -49,7 +49,7 @@ export default function ScheduleCellPopover({ top, left, above, title, current, 
             >
               {DUTY_STYLE[code].weekLabel}
               {now ? (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-ink px-1.5 text-[11px] leading-[16px] font-bold whitespace-nowrap text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2 text-[13px] leading-[18px] font-bold whitespace-nowrap text-white">
                   지금
                 </span>
               ) : null}

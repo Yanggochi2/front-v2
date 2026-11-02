@@ -72,7 +72,7 @@ export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose:
       <NavList items={nav.mainItems} />
       {nav.adminItems.length > 0 ? (
         <>
-          <p className="px-4 pt-5 pb-1 text-[14px] font-bold text-ink-faint">병동 관리</p>
+          <p className="px-4 pt-5 pb-1 text-[16px] font-bold text-ink-mute">병동 관리</p>
           <NavList items={nav.adminItems} />
         </>
       ) : null}

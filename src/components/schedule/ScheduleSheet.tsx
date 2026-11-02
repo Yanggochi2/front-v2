@@ -30,6 +30,10 @@ const POPOVER_PROBLEM_LINE = 26;
 // 고르는 창이 열려 있을 때 누르면 바로 그 근무로 바꾸는 키. 한글 입력 상태여도 같은 자리 키로 받는다.
 const KEY_DUTY: Record<string, EditableDutyCode> = { KeyD: "D", KeyE: "E", KeyN: "N", KeyO: "O" };
 
+// 다른 주의 위반으로 옮길 때 주소에 싣는 값 (옮긴 뒤 그 칸이나 그날을 다시 찾는다)
+const FOCUS_DATE = "focusDate";
+const FOCUS_NURSE = "focusNurse";
+
 // 칸 바꾸기(브러시) 중 안내. 받침에 따라 조사가 달라 근무마다 적는다.
 const BRUSH_HINT: Record<EditableDutyCode, string> = {
   D: "누르는 칸마다 D 데이로 바뀌어요",
@@ -159,7 +163,10 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     if (!issue.date) return;
     const col = api.dates.indexOf(issue.date);
     if (col < 0) {
-      router.push(scheduleHref("week", { yearMonth: sheet.yearMonth, week: Math.ceil(Number(issue.date.slice(8)) / 7) }));
+      // 옮긴 주에서 다시 찾을 수 있게 날짜와 간호사를 주소에 실어 보낸다 (아래 첫 렌더 효과에서 읽고 지운다)
+      const q = new URLSearchParams({ [FOCUS_DATE]: issue.date });
+      if (issue.nurseKey) q.set(FOCUS_NURSE, issue.nurseKey);
+      router.push(`${scheduleHref("week", { yearMonth: sheet.yearMonth, week: Math.ceil(Number(issue.date.slice(8)) / 7) })}&${q}`);
       return;
     }
     const row = issue.nurseKey ? rows.findIndex((r) => r.nurseKey === issue.nurseKey) : -1;
@@ -173,6 +180,24 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     // 시트가 스크롤되면 고르는 창이 닫히므로 스크롤이 끝난 다음 프레임에 연다.
     requestAnimationFrame(() => requestAnimationFrame(() => openPopover(row, col, el)));
   }
+  const focusIssueRef = useRef(focusIssue);
+  useEffect(() => {
+    focusIssueRef.current = focusIssue;
+  });
+
+  // 다른 주의 위반을 골라 이 주로 옮겨 왔으면, 그 칸이나 그날을 이어서 찾아 준다.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const date = q.get(FOCUS_DATE);
+    if (!date) return;
+    const nurseKey = q.get(FOCUS_NURSE);
+    q.delete(FOCUS_DATE);
+    q.delete(FOCUS_NURSE);
+    // state를 null로 넘겨야 Next 라우터도 바뀐 주소를 알아서, 나중에 router.refresh()가 focus 값을 되살리지 않는다.
+    window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
+    // 주소에서 값을 지운 뒤라 개발 모드처럼 효과가 두 번 돌아도 한 번만 찾는다. 그래서 정리 함수로 취소하지 않는다.
+    requestAnimationFrame(() => focusIssueRef.current({ id: "", date, nurseKey, message: "" }));
+  }, []);
 
   const gridRows = useMemo(() => {
     const all = rows.map((row, index) => ({ row, index }));

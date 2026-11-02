@@ -12,7 +12,7 @@ const DUTIES: { code: DutyCode; name: string }[] = [
 const BADGE = "rounded-full px-1 text-[11px] leading-tight font-bold text-white";
 
 type Props = {
-  isMonth: boolean; // 월간은 칸 표시가 짧다 (O·AL·희·C)
+  isMonth: boolean; // 월간은 칸 표시가 짧다 (O·AL·C, 희망 오프는 테두리)
   canManage: boolean; // 빈 칸·규칙 위반 표시는 편집하는 수간호사에게만 보인다
   hasToday: boolean;
 };
@@ -34,9 +34,13 @@ export default function ScheduleLegend({ isMonth, canManage, hasToday }: Props) 
       ))}
       <li aria-hidden className="h-4 w-px bg-line" />
       <li className="flex items-center gap-1.5">
-        <span aria-hidden className={`${BADGE} bg-ink-sub`}>
-          {isMonth ? "희" : "희망"}
-        </span>
+        {isMonth ? (
+          <span aria-hidden className="h-5 w-6 rounded-[5px] ring-2 ring-ink-sub ring-inset" />
+        ) : (
+          <span aria-hidden className={`${BADGE} bg-ink-sub`}>
+            희망
+          </span>
+        )}
         승인된 희망 오프
       </li>
       <li className="flex items-center gap-1.5">
