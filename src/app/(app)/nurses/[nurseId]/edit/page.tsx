@@ -3,11 +3,11 @@ import RnButton from "@/components/ui/RnButton";
 import RnEmptyState from "@/components/ui/RnEmptyState";
 import RnErrorState from "@/components/ui/RnErrorState";
 import RnPageHeader from "@/components/ui/RnPageHeader";
-import { getNurse } from "@/services/nursesApi";
+import { getNurse, getPreceptorCandidates } from "@/services/nursesApi";
 
 export default async function EditNursePage({ params }: PageProps<"/nurses/[nurseId]/edit">) {
   const { nurseId } = await params;
-  const nurse = await getNurse(nurseId).catch(() => null);
+  const [nurse, newNurses] = await Promise.all([getNurse(nurseId).catch(() => null), getPreceptorCandidates()]);
 
   if (!nurse) {
     return (
@@ -40,7 +40,7 @@ export default async function EditNursePage({ params }: PageProps<"/nurses/[nurs
   return (
     <div className="flex flex-col gap-8 px-12 pt-12 pb-10">
       <RnPageHeader title="간호사 정보 수정" subtitle={`${nurse.name}님의 근무 배정 정보를 수정해요`} />
-      <NurseForm nurse={nurse} />
+      <NurseForm nurse={nurse} newNurses={newNurses} />
     </div>
   );
 }

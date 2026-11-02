@@ -1,6 +1,7 @@
-// docs/API.md NUR-01~05 모델. 일반 간호사 응답에는 숙련도·경력·상태 등이 없을 수 있어 optional로 둔다.
+// docs/API.md NUR-01~05 모델, 10/26 계약(백엔드 docs/client-1026-api.md 2장)으로 입사 연도·프리셉터가 바뀜.
 export type ApiNurseRole = "HEAD_NURSE" | "NURSE";
-export type ApiDutyRole = "CHARGE" | "PRECEPTOR" | "NEW" | "GENERAL" | "NIGHT_ONLY";
+// 프리셉터는 직급이 아니라 역할이라 isPreceptor로 따로 온다 (구형 PRECEPTOR 입력은 백엔드가 GENERAL + isPreceptor로 바꾼다)
+export type ApiDutyRole = "CHARGE" | "NEW" | "GENERAL" | "NIGHT_ONLY";
 export type ApiNurseStatus = "ACTIVE" | "PREGNANT" | "ON_LEAVE" | "RETIRED";
 
 // TODO: 백엔드 확정 후 결정 — id 타입, 역할별로 어떤 필드가 빠지는지
@@ -10,7 +11,8 @@ export type ApiNurse = {
   role: ApiNurseRole;
   dutyRole?: ApiDutyRole;
   status?: ApiNurseStatus | null;
-  joinedAt?: string;
+  joinedYear?: number | null; // 입사 연도. 입사일 원본은 백엔드만 가진다
+  isPreceptor?: boolean;
   careerMonths?: number | null;
   skillLevel?: number | null;
   affiliationStart?: string;
@@ -23,17 +25,18 @@ export type ApiNurse = {
   inviteExpiresAt?: string | null;
 };
 
-// NUR-01 본문. role은 보내지 않는다(권한 부여는 WARD-09).
+// NUR-01 본문. role은 보내지 않는다.
 export type NurseCreate = {
   name: string;
   dutyRole: ApiDutyRole;
   status: ApiNurseStatus;
-  joinedAt: string;
+  joinedYear: number; // 1900 ~ 올해. 같은 이름·입사 연도의 재직자가 있으면 409 NURSE_ALREADY_EXISTS
+  isPreceptor: boolean;
   careerMonths: number;
   skillLevel: number;
   affiliationStart: string;
   affiliationEnd?: string | null;
-  /** 같은 병동의 NEW 간호사만 */
+  /** 같은 병동의 재직 NEW 간호사만. 프리셉터가 아닌데 보내면 422 INVALID_PRECEPTOR */
   preceptorOf?: string[] | null; // 담당 신입 간호사 id 목록
 };
 

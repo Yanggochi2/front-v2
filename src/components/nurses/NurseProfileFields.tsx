@@ -5,6 +5,7 @@ import RnOptionButton from "@/components/ui/RnOptionButton";
 import {
   DUTY_ROLE_LABEL,
   NURSE_STATUS_LABEL,
+  PRECEPTOR_LABEL,
   REGISTRABLE_STATUSES,
   SKILL_LEVELS,
 } from "@/constants/nurses.constants";
@@ -25,15 +26,20 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-const DUTY_ROLES: DutyRole[] = ["GENERAL", "CHARGE", "PRECEPTOR", "NEW", "NIGHT_ONLY"];
+const DUTY_ROLES: DutyRole[] = ["GENERAL", "CHARGE", "NEW", "NIGHT_ONLY"];
 
 type Props = {
   draft: NurseDraft;
   onChange: (patch: Partial<NurseDraft>) => void;
+  /** 담당 신입으로 고를 수 있는 재직 신입 간호사. 불러오지 못했으면 null */
+  newNurses: { id: string; name: string }[] | null;
 };
 
 // 간호사 등록 입력칸. 2열 grid 안에 놓는다 (간호사 등록·수정 화면에서 같이 쓴다).
-export default function NurseProfileFields({ draft, onChange }: Props) {
+export default function NurseProfileFields({ draft, onChange, newNurses }: Props) {
+  const togglePrecepted = (id: string) =>
+    onChange({ preceptorOf: draft.preceptorOf.includes(id) ? draft.preceptorOf.filter((x) => x !== id) : [...draft.preceptorOf, id] });
+
   return (
     <>
       <Field label="이름">
@@ -47,21 +53,21 @@ export default function NurseProfileFields({ draft, onChange }: Props) {
           className={inputCls}
         />
       </Field>
-      <Field label="입사년도">
+      <Field label="입사 연도">
         <input
           type="number"
           required
           min={1970}
           max={new Date().getFullYear()}
           placeholder="예: 2022"
-          aria-label="입사년도"
+          aria-label="입사 연도"
           value={draft.hireYear}
           onChange={(e) => onChange({ hireYear: e.target.value })}
           className={inputCls}
         />
       </Field>
 
-      <Field label="듀티 역할" hint="차지·프리셉터·신입은 근무 배정 규칙이 달라요">
+      <Field label="직급" hint="차지·신입·나이트 전담은 근무 배정 규칙이 달라요">
         <div className="flex flex-wrap gap-2">
           {DUTY_ROLES.map((r) => (
             <RnOptionButton key={r} selected={draft.dutyRole === r} onClick={() => onChange({ dutyRole: r })}>
@@ -70,6 +76,35 @@ export default function NurseProfileFields({ draft, onChange }: Props) {
           ))}
         </div>
       </Field>
+
+      <Field label={PRECEPTOR_LABEL} hint="신입을 가르치는 역할이에요. 직급과 따로 정해요">
+        <div className="flex flex-wrap gap-2">
+          <RnOptionButton selected={!draft.isPreceptor} onClick={() => onChange({ isPreceptor: false })}>
+            맡지 않음
+          </RnOptionButton>
+          <RnOptionButton selected={draft.isPreceptor} onClick={() => onChange({ isPreceptor: true })}>
+            맡음
+          </RnOptionButton>
+        </div>
+      </Field>
+
+      {draft.isPreceptor ? (
+        <Field label="담당 신입" hint="재직 중인 신입 간호사만 고를 수 있어요">
+          {newNurses === null ? (
+            <p className="text-[17px] font-medium text-danger">신입 간호사 목록을 불러오지 못했어요. 새로고침해 주세요.</p>
+          ) : newNurses.length === 0 ? (
+            <p className="text-[17px] font-medium text-ink-mute">등록된 신입 간호사가 없어요</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {newNurses.map((n) => (
+                <RnOptionButton key={n.id} selected={draft.preceptorOf.includes(n.id)} onClick={() => togglePrecepted(n.id)}>
+                  {n.name}
+                </RnOptionButton>
+              ))}
+            </div>
+          )}
+        </Field>
+      ) : null}
 
       <Field label="총 경력" hint="입사 전 경력까지 합쳐요">
         <div className="flex items-center gap-2.5">

@@ -8,10 +8,11 @@ export const NURSE_ROLE_LABEL: Record<NurseRole, string> = {
 export const DUTY_ROLE_LABEL: Record<DutyRole, string> = {
   GENERAL: "일반",
   CHARGE: "차지",
-  PRECEPTOR: "프리셉터",
   NEW: "신입",
   NIGHT_ONLY: "나이트 전담",
 };
+
+export const PRECEPTOR_LABEL = "프리셉터";
 
 // 상태 값은 API 명세(ACTIVE|PREGNANT|ON_LEAVE|RETIRED). 퇴사는 등록 불가(COM-02, NUR-05로 처리).
 export const NURSE_STATUS_LABEL: Record<NurseStatus, string> = {

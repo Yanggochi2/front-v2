@@ -4,18 +4,21 @@ import { useState } from "react";
 import RnFilterChip from "@/components/ui/RnFilterChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import type { DutyRole, Nurse } from "@/types/nurses.type";
-import { DUTY_ROLE_LABEL } from "@/constants/nurses.constants";
+import { DUTY_ROLE_LABEL, PRECEPTOR_LABEL } from "@/constants/nurses.constants";
 import { compareNurses, type NurseSortKey } from "@/lib/nurseSort";
 import NursesTable from "./NursesTable";
 
-type RoleFilter = DutyRole | "ALL";
+// 프리셉터는 직급이 아니라 역할이라 isPreceptor로 거른다
+type RoleFilter = DutyRole | "PRECEPTOR" | "ALL";
 
 const SORTS: { value: NurseSortKey; label: string }[] = [
   { value: "skill", label: "숙련도순" },
   { value: "name", label: "이름순" },
 ];
 
-const ROLE_FILTERS: RoleFilter[] = ["ALL", "CHARGE", "PRECEPTOR", "GENERAL", "NEW", "NIGHT_ONLY"];
+const ROLE_FILTERS: RoleFilter[] = ["ALL", "CHARGE", "GENERAL", "NEW", "NIGHT_ONLY", "PRECEPTOR"];
+
+const matches = (n: Nurse, f: RoleFilter) => f === "ALL" || (f === "PRECEPTOR" ? n.isPreceptor === true : n.dutyRole === f);
 
 const sortFields = (n: Nurse) => ({
   ...n,
@@ -29,10 +32,10 @@ export default function NursesBoard({ items }: { items: Nurse[] }) {
   const [includeRetired, setIncludeRetired] = useState(false);
 
   const pool = items.filter((n) => includeRetired || n.status !== "RETIRED");
-  const count = (f: RoleFilter) => (f === "ALL" ? pool.length : pool.filter((n) => n.dutyRole === f).length);
+  const count = (f: RoleFilter) => pool.filter((n) => matches(n, f)).length;
   const retiredCount = items.filter((n) => n.status === "RETIRED").length;
   const visible = pool
-    .filter((n) => role === "ALL" || n.dutyRole === role)
+    .filter((n) => matches(n, role))
     .sort((a, b) => compareNurses(sort, sortFields(a), sortFields(b)));
 
   return (
@@ -46,7 +49,7 @@ export default function NursesBoard({ items }: { items: Nurse[] }) {
           <p className="text-[17px] font-bold text-ink">역할</p>
           {ROLE_FILTERS.filter((f) => f === "ALL" || f === role || count(f) > 0).map((f) => (
             <RnFilterChip key={f} selected={role === f} onClick={() => setRole(f)}>
-              {f === "ALL" ? "전체" : DUTY_ROLE_LABEL[f]} {count(f)}
+              {f === "ALL" ? "전체" : f === "PRECEPTOR" ? PRECEPTOR_LABEL : DUTY_ROLE_LABEL[f]} {count(f)}
             </RnFilterChip>
           ))}
         </div>
