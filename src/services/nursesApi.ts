@@ -26,6 +26,7 @@ export function mapNurse(n: ApiNurse): Nurse {
     name: n.name,
     role: n.role,
     dutyRole: n.dutyRole as DutyRole | undefined,
+    isPreceptor: n.isPreceptor,
     status: (n.status ?? undefined) as NurseStatus | undefined,
     careerYears: n.careerMonths == null ? undefined : Math.floor(n.careerMonths / 12),
     careerMonths: n.careerMonths == null ? undefined : n.careerMonths % 12,
@@ -37,10 +38,16 @@ export function mapNurse(n: ApiNurse): Nurse {
 }
 
 function mapNurseDetail(n: ApiNurse): NurseDetail {
-  if (!n.joinedAt || !n.affiliationStart || n.version === undefined) {
+  if (n.joinedYear == null || !n.affiliationStart || n.version === undefined) {
     throw new Error("간호사 상세 정보가 올바르지 않아요.");
   }
-  return { ...mapNurse(n), joinedAt: n.joinedAt, affiliationStart: n.affiliationStart, version: n.version };
+  return {
+    ...mapNurse(n),
+    joinedYear: n.joinedYear,
+    preceptorOf: n.preceptorOf ?? [],
+    affiliationStart: n.affiliationStart,
+    version: n.version,
+  };
 }
 
 // NUR-02.
@@ -52,6 +59,17 @@ export async function getNurses(query: NurseListQuery = {}): Promise<NurseListRe
   });
   const items = list.data.map(mapNurse);
   return { items, activeCount: items.filter((n) => n.status !== "RETIRED").length };
+}
+
+// 프리셉터가 맡을 수 있는 신입: 같은 병동의 재직 NEW 간호사 (10/26 계약 2장).
+// 불러오지 못하면 null (빈 목록과 구분해, 폼에서 "불러오지 못했어요"로 보여 준다).
+export async function getPreceptorCandidates(): Promise<{ id: string; name: string }[] | null> {
+  try {
+    const list = await apiRequestList<ApiNurse>(NURSES_PATH, { query: { dutyRole: "NEW", size: 100 } });
+    return list.data.filter((n) => n.status !== "RETIRED").map((n) => ({ id: n.id, name: n.name }));
+  } catch {
+    return null;
+  }
 }
 
 // 근무표 행 정렬용. 근무표 nurses[]에 없는 수간호사 여부·총경력을 NUR-02에서 채운다. 수간호사 화면에서만 부른다.

@@ -1,5 +1,6 @@
 export type NurseRole = "HEAD_NURSE" | "NURSE";
-export type DutyRole = "GENERAL" | "CHARGE" | "PRECEPTOR" | "NEW" | "NIGHT_ONLY";
+// 직급(근무 배정 역할). 프리셉터는 직급이 아니라 isPreceptor로 따로 둔다 (10/26 미팅)
+export type DutyRole = "GENERAL" | "CHARGE" | "NEW" | "NIGHT_ONLY";
 export type NurseStatus = "ACTIVE" | "PREGNANT" | "ON_LEAVE" | "RETIRED";
 
 // TODO: 응답 필드는 백엔드 확정 후 결정. 일반 간호사 응답에는 숙련도·경력·상태가 없을 수 있다(서버 규칙).
@@ -9,6 +10,7 @@ export type Nurse = {
   role: NurseRole;
   /** 아래 필드는 받은 것만 표시한다 (일반 간호사 응답에는 없을 수 있음) */
   dutyRole?: DutyRole;
+  isPreceptor?: boolean;
   status?: NurseStatus;
   careerYears?: number;
   careerMonths?: number;
@@ -21,7 +23,8 @@ export type Nurse = {
 };
 
 export type NurseDetail = Nurse & {
-  joinedAt: string;
+  joinedYear: number;
+  preceptorOf: string[];
   affiliationStart: string;
   version: number;
 };
@@ -29,9 +32,12 @@ export type NurseDetail = Nurse & {
 // 간호사 등록 폼의 입력값. 날짜는 YYYY-MM-DD 문자열, 숫자는 입력 그대로 문자열.
 export type NurseDraft = {
   name: string;
-  /** 입사년도 (YYYY). 서버로는 그 해 1월 1일로 보낸다 */
+  /** 입사 연도 (YYYY) */
   hireYear: string;
   dutyRole: DutyRole;
+  isPreceptor: boolean;
+  /** 담당 신입 간호사 id. 프리셉터일 때만 보낸다 */
+  preceptorOf: string[];
   careerYears: string;
   careerMonths: string;
   skill: number;

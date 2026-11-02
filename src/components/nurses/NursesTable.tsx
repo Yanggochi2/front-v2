@@ -1,6 +1,6 @@
 import RnChip from "@/components/ui/RnChip";
 import RnButton from "@/components/ui/RnButton";
-import { DUTY_ROLE_LABEL, NURSE_ROLE_LABEL, NURSE_STATUS_LABEL } from "@/constants/nurses.constants";
+import { DUTY_ROLE_LABEL, NURSE_ROLE_LABEL, NURSE_STATUS_LABEL, PRECEPTOR_LABEL } from "@/constants/nurses.constants";
 import type { Nurse } from "@/types/nurses.type";
 
 // 권한·듀티 역할은 "역할" 한 칸으로 합치고, 상태는 재직이 아닐 때만 이름 옆에 보인다.
@@ -54,6 +54,7 @@ export default function NursesTable({ items }: { items: Nurse[] }) {
                         {DUTY_ROLE_LABEL[n.dutyRole]}
                       </RnChip>
                     ) : null}
+                    {n.isPreceptor ? <RnChip tone="gray">{PRECEPTOR_LABEL}</RnChip> : null}
                     {n.role !== "HEAD_NURSE" && !n.dutyRole ? "-" : null}
                   </span>
                 </td>
