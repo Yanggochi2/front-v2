@@ -29,6 +29,13 @@
 
 - 로그인·회원가입·소속 선택·승인 대기·신청·가입 승인·마이페이지(`/login`, `/signup`, `/onboarding/select-ward`, `/onboarding/pending`, `/requests`, `/approvals`, `/me`)는 10/26 범위 변경으로 없앴다.
 
+## 공유 링크 — `src/app/(shared)/`
+| 경로 | 화면 |
+|---|---|
+| `/shared/[token]` | 로그인 없이 보는 확정 근무표 (`GET /shared/schedules/{token}`). 월간, 정렬 `?sort=name`(없으면 숙련도순), 인쇄·PDF만. 링크가 바뀌었거나 꺼졌으면(404) 안내. 검색 제외·Referer 안 보냄 |
+
+- 수간호사는 확정·지난 근무표의 머리에 있는 "공유 링크"에서 링크를 만들고·복사하고·다시 만들고·끈다. 확정을 취소하면 링크는 백엔드가 지운다.
+
 ## 랜딩 — `src/app/(marketing)/`
 | 경로 | 화면 |
 |---|---|

@@ -36,6 +36,8 @@ type RequestOptions = {
   idempotencyKey?: string;
   // 근무표 편집 잠금을 쓰는 변경 요청에 넘긴다.
   scheduleLockToken?: string;
+  // 공유 링크 조회처럼 로그인 없이 부르는 요청. 관리 토큰을 붙이지 않는다.
+  anonymous?: boolean;
 };
 
 function buildUrl(path: string, query?: Query) {
@@ -62,7 +64,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   if (options.scheduleLockToken) headers["X-Schedule-Lock-Token"] = options.scheduleLockToken;
-  const token = await getManagementToken();
+  const token = options.anonymous ? undefined : await getManagementToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   if (BASE_URL === "") {

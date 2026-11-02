@@ -13,6 +13,7 @@ src/
   app/                 라우트(page, layout만). 조립만 한다.
     (app)/             사이드바 있는 화면
     (onboarding)/      사이드바 없는 화면 (병동 만들기, 관리 링크 진입 /manage)
+    (shared)/          로그인 없이 보는 공유 근무표 (/shared/[token])
     (marketing)/       서비스 소개 랜딩 (/)
   components/
     layout/            Sidebar 등 공통 레이아웃
@@ -55,6 +56,7 @@ src/
 - `lib/apiClient.ts`: 브라우저에서는 쿠키를, 서버 컴포넌트에서는 요청 쿠키(`next/headers`)를 읽어 `Authorization: Bearer`로 보낸다. 백엔드는 쿠키를 읽지 않으므로 `credentials: "omit"`.
 - (app) 레이아웃은 `GET /wards/me`로 병동 정보를 받는다. 401이면 `/manage`로 보내고, 서버에 닿지 못하면 화면 틀만 보여 준다.
 - 역할 구분이 없어 사이드바 메뉴는 하나다 (`hooks/useNavModel.ts`).
+- 공유 링크 조회(`services/sharingApi.ts`의 `getSharedSchedule`)는 `anonymous: true`로 불러 관리 토큰을 붙이지 않는다.
 
 ## 근무표·자동 생성 서비스
 - `services/scheduleApi.ts`(조회·셀 변경·확정·내보내기), `services/generationApi.ts`(자동 생성 GEN-01~05). 항상 실제 API를 호출한다.

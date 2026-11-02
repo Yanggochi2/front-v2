@@ -18,6 +18,7 @@ import ScheduleGrid from "./ScheduleGrid";
 import ScheduleIssues from "./ScheduleIssues";
 import ScheduleLegend from "./ScheduleLegend";
 import ScheduleShareButtons from "./ScheduleShareButtons";
+import ScheduleShareLink from "./ScheduleShareLink";
 import ScheduleToolbar from "./ScheduleToolbar";
 
 type Popover = { row: number; col: number; top: number; left: number; above: boolean };
@@ -55,7 +56,7 @@ const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand
 
 // 고칠 수 없는 근무표일 때 도구 줄에 보여 줄 안내 (근무표 상태로 편집 가능 여부를 정한다, AGENTS.md 6.2)
 const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
-  CONFIRMED: "간호사들에게 공개된 근무표예요. 고치려면 확정을 취소해 주세요",
+  CONFIRMED: "확정된 근무표예요. 고치려면 확정을 취소해 주세요",
   GENERATING: "자동 생성 중에는 고칠 수 없어요",
   ARCHIVED: "지난 근무표는 고칠 수 없어요",
 };
@@ -258,6 +259,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
             </div>
             <div className="ml-auto flex items-center gap-3 print:hidden">
               <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport />
+              {/* 공유 링크는 확정·지난 근무표에만 만들 수 있다 */}
+              {api.status === "CONFIRMED" || api.status === "ARCHIVED" ? <ScheduleShareLink scheduleId={api.scheduleId} /> : null}
               <span aria-hidden className="h-7 w-px bg-line" />
               {api.status === "DRAFT" && editor.issues.length > 0 ? (
                 <ScheduleIssues issues={editor.issues} names={names} onPick={focusIssue} />
