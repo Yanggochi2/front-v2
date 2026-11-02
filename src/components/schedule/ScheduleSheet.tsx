@@ -193,7 +193,8 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
     const nurseKey = q.get(FOCUS_NURSE);
     q.delete(FOCUS_DATE);
     q.delete(FOCUS_NURSE);
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${q}`);
+    // state를 null로 넘겨야 Next 라우터도 바뀐 주소를 알아서, 나중에 router.refresh()가 focus 값을 되살리지 않는다.
+    window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
     // 주소에서 값을 지운 뒤라 개발 모드처럼 효과가 두 번 돌아도 한 번만 찾는다. 그래서 정리 함수로 취소하지 않는다.
     requestAnimationFrame(() => focusIssueRef.current({ id: "", date, nurseKey, message: "" }));
   }, []);
