@@ -32,7 +32,7 @@ type Props = {
   onChange: (patch: Partial<NurseDraft>) => void;
 };
 
-// 간호사 등록 입력칸. 2열 grid 안에 놓는다 (간호사 등록 화면, 가입 승인 창에서 같이 쓴다).
+// 간호사 등록 입력칸. 2열 grid 안에 놓는다 (간호사 등록·수정 화면에서 같이 쓴다).
 export default function NurseProfileFields({ draft, onChange }: Props) {
   return (
     <>

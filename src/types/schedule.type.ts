@@ -21,7 +21,6 @@ export type ScheduleCell = {
   violations?: string[]; // 이 칸에 걸린 하드 위반 메시지
   editable?: boolean; // 없으면 편집 가능
   charge?: boolean; // 그날 그 근무의 차지 간호사
-  approvedOff?: boolean; // 그날 승인된 희망 오프가 있다
 };
 
 export type ScheduleDay = {
@@ -56,7 +55,7 @@ export type ScheduleSheetData = {
   title: string;
   days: ScheduleDay[];
   rows: ScheduleRow[];
-  coverage: CoverageStatus[] | null; // 간호사의 월별 보기에는 커버리지 행이 없다
+  coverage: CoverageStatus[] | null; // 서버에 연결하지 못한 틀 화면이면 null
   // 작성 중 근무표의 규칙 위반(HARD). 병동 단위 위반(인원 미달 등)도 들어 있고, 0건이어야 확정할 수 있다.
   // 위반 목록을 받지 않는 상태(확정본·간호사 화면·서버 연결 실패)면 빈 배열
   issues: ScheduleIssue[];
@@ -85,13 +84,12 @@ export type ScheduleBrush = { code: EditableDutyCode; label: string };
 export type SchedulePageData =
   | { kind: "sheet"; sheet: ScheduleSheetData }
   | { kind: "no-nurses"; periodLabel: string }
-  | { kind: "nurse-unpublished"; periodLabel: string };
+  | { kind: "no-schedule"; periodLabel: string; yearMonth: string };
 
 export type SchedulePageParams = {
   view?: string;
   ym?: string;
   week?: string;
-  manage?: boolean; // 수간호사 화면이면 정렬용 간호사 정보(NUR-02)를 같이 받는다
 };
 
 export type GenerationStep = {

@@ -12,10 +12,9 @@ import {
   TERMS_LABEL,
 } from "@/constants/auth.constants";
 import { useSubmit } from "@/hooks/useSubmit";
-import { getEntryPath, login, signup } from "@/services/authApi";
+import { signup } from "@/services/authApi";
 import AuthField from "./AuthField";
 
-type Props = { joinCode?: string };
 type Errors = Partial<Record<"name" | "email" | "password" | "passwordConfirm" | "terms", string>>;
 
 function validate(v: { name: string; email: string; password: string; passwordConfirm: string; terms: boolean }): Errors {
@@ -30,7 +29,7 @@ function validate(v: { name: string; email: string; password: string; passwordCo
   return errors;
 }
 
-export default function SignupForm({ joinCode }: Props) {
+export default function SignupForm() {
   const router = useRouter();
   const [values, setValues] = useState({ name: "", email: "", password: "", passwordConfirm: "", terms: false });
   const [errors, setErrors] = useState<Errors>({});
@@ -48,28 +47,18 @@ export default function SignupForm({ joinCode }: Props) {
     if (Object.keys(found).length > 0) return;
 
     const email = values.email.trim();
-    let next = "/onboarding/select-ward";
+    // 가입 응답이 인증 쿠키를 내려 주므로(백엔드 #86) 바로 병동 만들기로 간다.
     const ok = await submit(async () => {
       await signup({ name: values.name.trim(), email, password: values.password, termsAgreed: true });
-      // TODO: 가입 응답에 인증 쿠키가 오는지 명세에 없다. 지금은 가입 후 로그인을 한 번 더 한다.
-      await login({ email, password: values.password });
-      next = await getEntryPath(joinCode);
     });
     if (ok) {
-      router.replace(next);
+      router.replace("/onboarding/create-ward");
       router.refresh();
     }
   }
 
-  const loginHref = joinCode ? `/login?code=${encodeURIComponent(joinCode)}` : "/login";
-
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
-      {joinCode ? (
-        <p className="rounded-[14px] bg-primary-soft px-5 py-3.5 text-[17px] font-bold text-primary">
-          병동 초대 코드 {joinCode}로 가입해요. 가입하면 바로 가입 신청 화면으로 가요.
-        </p>
-      ) : null}
       <AuthField
         id="signup-name"
         label="이름"
@@ -133,7 +122,7 @@ export default function SignupForm({ joinCode }: Props) {
       </OnboardingButton>
       <p className="text-center text-[17px] font-medium text-ink-sub">
         이미 계정이 있나요?{" "}
-        <Link href={loginHref} className="font-bold text-primary underline-offset-4 hover:underline">
+        <Link href="/login" className="font-bold text-primary underline-offset-4 hover:underline">
           로그인
         </Link>
       </p>

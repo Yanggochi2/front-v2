@@ -3,6 +3,11 @@
 원본: "병동 근무표 서비스 API 명세서 v1.0 (기준안, 2026-10-06)". 아래는 프론트 구현에 필요한 내용을 줄여 옮긴 것이다. 충돌하면 원본이 맞다.
 형식: REST JSON over HTTPS, 기본 경로 `/api/v1`.
 
+> **10/26 범위 변경**: 인증·가입·신청·알림은 백엔드 계약 `Yanggochi2/backend` `docs/client-1026-api.md`(백엔드 #85, #86)로 바뀌었다.
+> 수간호사만 `/auth/signup`·`/auth/login`·`/me`로 로그인한다(HttpOnly 쿠키 + CSRF, 아래 공통 규칙 그대로). 일반 간호사 가입·초대·권한 이관·`/wards/me/requests*`·알림은 없다.
+> 새로 생긴 것: `POST /workspaces`(로그인한 계정으로 병동 만들기), 근무표 공유 링크(`/share-link`, `GET /shared/schedules/{token}`).
+> 아래 WARD(가입·초대·권한 이관)·REQ·NOTI 절은 명세서가 개정될 때까지 참고용으로만 남긴다.
+
 ## 공통 규칙
 - 인증: 액세스/리프레시 토큰을 HttpOnly·Secure·SameSite 쿠키로 주고받는다. 토큰을 본문·쿼리·브라우저 저장소로 다루지 않는다 → 요청은 `credentials: "include"`.
 - 상태 변경 요청(POST/PATCH/PUT/DELETE)은 `X-CSRF-Token` 헤더가 필요하다. (토큰을 어디서 받는지는 명세에 없음 → TODO)

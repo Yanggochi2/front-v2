@@ -1,4 +1,5 @@
-// docs/API.md 인증·소속 (AUTH-01~05) 요청/응답 모양. 응답 필드는 명세 기준.
+// docs/API.md 인증 (AUTH-01~05) 요청/응답 모양. 10/26 계약에서 수간호사 계정만 남았다.
+import type { ApiWard } from "./wardApi.type";
 export type AccountStatus = string; // TODO: 백엔드 확정 후 결정 (UserSummary.accountStatus 열거값)
 
 export type UserSummary = {
@@ -20,4 +21,11 @@ export type SignupRequest = {
 export type LoginRequest = {
   email: string;
   password: string;
+};
+
+// AUTH-05 GET /me. 병동을 만들기 전에는 membership·ward가 null이다.
+export type MeResponse = {
+  user: UserSummary;
+  membership: { id: string; role: "HEAD_NURSE" | "NURSE" } | null;
+  ward: ApiWard | null;
 };

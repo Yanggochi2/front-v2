@@ -3,40 +3,68 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSubmit } from "@/hooks/useSubmit";
-import { createWard } from "@/services/onboardingApi";
+import { todayKst } from "@/lib/schedulePeriod";
+import { createWorkspace } from "@/services/onboardingApi";
 import OnboardingButton from "@/components/ui/OnboardingButton";
 import OnboardingCard from "@/components/ui/OnboardingCard";
 import OnboardingInput from "@/components/ui/OnboardingInput";
 import type { CreateWardDefaults, ShiftKind } from "@/types/onboarding.type";
 import StaffStepper from "./StaffStepper";
 
-type Props = { defaults: CreateWardDefaults };
+type Props = { defaults: CreateWardDefaults; userName: string };
 
 const SHIFTS: ShiftKind[] = ["D", "E", "N"];
 const labelClass = "text-lg font-bold text-ink";
+const THIS_YEAR = Number(todayKst().yearMonth.slice(0, 4));
 
-export default function CreateWardForm({ defaults }: Props) {
+const toInt = (v: string) => (v.trim() === "" ? NaN : Number(v));
+
+export default function CreateWardForm({ defaults, userName }: Props) {
+  const router = useRouter();
   const [hospital, setHospital] = useState("");
   const [ward, setWard] = useState("");
   const [staff, setStaff] = useState(defaults.requiredStaff);
   const [presetId, setPresetId] = useState(defaults.defaultPresetId);
+  // 만드는 사람이 이 병동의 수간호사로 함께 등록된다 (POST /workspaces)
+  const [headName, setHeadName] = useState(userName);
+  const [joinedYear, setJoinedYear] = useState("");
+  const [careerYears, setCareerYears] = useState("");
+  const [careerMonths, setCareerMonths] = useState("0");
+  const [affiliationStart, setAffiliationStart] = useState(() => {
+    const { yearMonth, day } = todayKst();
+    return `${yearMonth}-${String(day).padStart(2, "0")}`;
+  });
 
-  const router = useRouter();
   const { submit, loading, error } = useSubmit();
-  const canSubmit = hospital.trim() !== "" && ward.trim() !== "" && !loading;
+  const year = toInt(joinedYear);
+  const career = toInt(careerYears) * 12 + toInt(careerMonths);
+  const canSubmit =
+    hospital.trim() !== "" &&
+    ward.trim() !== "" &&
+    headName.trim() !== "" &&
+    Number.isInteger(year) && year >= 1900 && year <= THIS_YEAR &&
+    Number.isInteger(career) && career >= 0 &&
+    affiliationStart !== "" &&
+    !loading;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     const ok = await submit(() =>
-      createWard({
+      createWorkspace({
         hospitalName: hospital.trim(),
         wardName: ward.trim(),
+        headName: headName.trim(),
+        joinedYear: year,
+        careerMonths: career,
+        affiliationStart,
         requiredStaff: staff,
         rulePreset: presetId,
       }),
     );
-    // TODO: 개설 후 이동 경로는 백엔드 확정 후 결정 (프로토타입: 근무표 빈 상태)
-    if (ok) router.push("/schedule");
+    if (ok) {
+      router.replace("/schedule");
+      router.refresh();
+    }
   }
 
   return (
@@ -55,6 +83,43 @@ export default function CreateWardForm({ defaults }: Props) {
         onChange={(e) => setWard(e.target.value)}
         placeholder="병동 이름을 입력해요"
       />
+      <label htmlFor="head-name" className={labelClass}>수간호사 이름</label>
+      <OnboardingInput
+        id="head-name"
+        value={headName}
+        onChange={(e) => setHeadName(e.target.value)}
+        placeholder="근무표에 나올 이름이에요"
+      />
+      <div className="grid grid-cols-2 gap-x-6 gap-y-[22px]">
+        <div className="flex flex-col gap-[22px]">
+          <label htmlFor="joined-year" className={labelClass}>입사 연도</label>
+          <OnboardingInput
+            id="joined-year"
+            type="number"
+            min={1900}
+            max={THIS_YEAR}
+            value={joinedYear}
+            onChange={(e) => setJoinedYear(e.target.value)}
+            placeholder="예: 2005"
+          />
+        </div>
+        <div className="flex flex-col gap-[22px]">
+          <label htmlFor="affiliation-start" className={labelClass}>이 병동 소속 시작일</label>
+          <OnboardingInput
+            id="affiliation-start"
+            type="date"
+            value={affiliationStart}
+            onChange={(e) => setAffiliationStart(e.target.value)}
+          />
+        </div>
+      </div>
+      <p className={labelClass}>총 경력 (입사 전 경력까지)</p>
+      <div className="flex items-center gap-3">
+        <OnboardingInput type="number" min={0} aria-label="경력 년" value={careerYears} onChange={(e) => setCareerYears(e.target.value)} placeholder="0" />
+        <span className="shrink-0 text-lg font-medium text-ink-sub">년</span>
+        <OnboardingInput type="number" min={0} max={11} aria-label="경력 개월" value={careerMonths} onChange={(e) => setCareerMonths(e.target.value)} />
+        <span className="shrink-0 text-lg font-medium text-ink-sub">개월</span>
+      </div>
       <p className={labelClass}>하루에 필요한 인원</p>
       <div className="grid grid-cols-3 gap-3">
         {SHIFTS.map((kind) => (

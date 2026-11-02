@@ -61,8 +61,8 @@ const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
 };
 const OFFLINE_NOTE = "서버에 연결되면 고칠 수 있어요";
 
-// canManage: 수간호사만 true. 간호사는 확정된 근무표를 보기만 하므로 편집 도구와 확정 버튼을 숨긴다.
-export default function ScheduleSheet({ sheet, canManage = true }: { sheet: ScheduleSheetData; canManage?: boolean }) {
+// 로그인한 수간호사의 근무표 화면. 간호사는 공유 링크로 확정본만 본다 (10/26 계약).
+export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const router = useRouter();
   const editor = useScheduleEditor(sheet);
   const { rows, setDuty } = editor;
@@ -72,10 +72,10 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
   const [popover, setPopover] = useState<Popover | null>(null);
   // 위반 목록에서 고른 날(열). 다음에 아무 데나 누르거나 Esc를 누르면 지운다.
   const [spotCol, setSpotCol] = useState<number | null>(null);
-  const [showEmptyGuide, setShowEmptyGuide] = useState(canManage && sheet.unassigned);
+  const [showEmptyGuide, setShowEmptyGuide] = useState(sheet.unassigned);
   const generation = useGenerationStart();
   const api = sheet.api;
-  const editable = canManage && api.editable;
+  const editable = api.editable;
   const hint = !editable
     ? undefined
     : brush
@@ -242,11 +242,9 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
                 ›
               </Link>
             </div>
-            {canManage ? (
-              <span className="print:hidden">
-                <ScheduleChip tone={STATUS_CHIP[api.status].tone}>{STATUS_CHIP[api.status].label}</ScheduleChip>
-              </span>
-            ) : null}
+            <span className="print:hidden">
+              <ScheduleChip tone={STATUS_CHIP[api.status].tone}>{STATUS_CHIP[api.status].label}</ScheduleChip>
+            </span>
             <span aria-hidden className="h-7 w-px bg-line print:hidden" />
             <div className="flex items-center gap-2 print:hidden">
               <ScheduleSegmented
@@ -260,42 +258,36 @@ export default function ScheduleSheet({ sheet, canManage = true }: { sheet: Sche
               )}
             </div>
             <div className="ml-auto flex items-center gap-3 print:hidden">
-              <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport={canManage} />
-              {canManage ? (
-                <>
-                  <span aria-hidden className="h-7 w-px bg-line" />
-                  {api.status === "DRAFT" && editor.issues.length > 0 ? (
-                    <ScheduleIssues issues={editor.issues} names={names} onPick={focusIssue} />
-                  ) : null}
-                  <ScheduleBottomBar
-                    scheduleId={api.scheduleId}
-                    yearMonth={sheet.yearMonth}
-                    status={api.status}
-                    hardViolationCount={editor.issues.length}
-                  />
-                </>
+              <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport />
+              <span aria-hidden className="h-7 w-px bg-line" />
+              {api.status === "DRAFT" && editor.issues.length > 0 ? (
+                <ScheduleIssues issues={editor.issues} names={names} onPick={focusIssue} />
               ) : null}
-            </div>
-          </div>
-          {/* 2줄: 칸 고치기 도구 (수간호사). 고칠 수 없는 근무표면 그 이유와 정렬만 */}
-          {canManage ? (
-            <div className="rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
-              <ScheduleToolbar
-                editable={editable}
-                readOnlyNote={READONLY_NOTE[api.status] ?? OFFLINE_NOTE}
-                brush={brush}
-                onBrushChange={setBrush}
-                canUndo={editor.canUndo}
-                onUndo={editor.undo}
-                canRedo={editor.canRedo}
-                onRedo={editor.redo}
-                checkOnly={checkOnly}
-                onCheckOnlyChange={setCheckOnly}
-                sort={sort}
-                onSortChange={setSort}
+              <ScheduleBottomBar
+                scheduleId={api.scheduleId}
+                yearMonth={sheet.yearMonth}
+                status={api.status}
+                hardViolationCount={editor.issues.length}
               />
             </div>
-          ) : null}
+          </div>
+          {/* 2줄: 칸 고치기 도구. 고칠 수 없는 근무표면 그 이유와 정렬만 */}
+          <div className="rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
+            <ScheduleToolbar
+              editable={editable}
+              readOnlyNote={READONLY_NOTE[api.status] ?? OFFLINE_NOTE}
+              brush={brush}
+              onBrushChange={setBrush}
+              canUndo={editor.canUndo}
+              onUndo={editor.undo}
+              canRedo={editor.canRedo}
+              onRedo={editor.redo}
+              checkOnly={checkOnly}
+              onCheckOnlyChange={setCheckOnly}
+              sort={sort}
+              onSortChange={setSort}
+            />
+          </div>
           {editor.saveError ? (
             <p role="alert" className="text-[16px] font-bold text-danger">
               {editor.saveError}

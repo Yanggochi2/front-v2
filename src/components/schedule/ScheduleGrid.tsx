@@ -159,7 +159,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                         disabled={!editable}
                         data-cell={`${index}:${col}`}
                         onClick={(e) => onCellClick?.(index, col, e.currentTarget)}
-                        aria-label={`${row.name} ${day.date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}${cell.approvedOff ? " 희망 오프" : ""}`}
+                        aria-label={`${row.name} ${day.date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}`}
                         className={`group/cell flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default ${
                           painting ? "enabled:cursor-crosshair" : "enabled:cursor-pointer"
                         } ${tile.radius}`}
@@ -175,21 +175,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                           }`}
                         >
                           {label}
-                          {/* 주간은 희망·차지 표시를 타일 안에 글자로 붙인다 */}
-                          {!isMonth && cell.approvedOff ? (
-                            <span aria-hidden className="rounded-full bg-ink-sub px-1.5 py-0.5 text-[12px] leading-tight font-bold text-white">
-                              희망
-                            </span>
-                          ) : null}
+                          {/* 주간은 차지 표시를 타일 안에 글자로 붙인다 */}
                           {!isMonth && cell.charge ? (
                             <span aria-hidden className="rounded-full bg-primary px-1.5 py-0.5 text-[12px] leading-tight font-bold text-white">
                               차지
                             </span>
-                          ) : null}
-                          {/* 월간은 칸이 좁아 희망 오프를 글자 대신 진회색 테두리로 보여 준다 (위반 빨강·선택 버건디와 색으로 구분).
-                              위반·선택 테두리(3px)와 겹쳐도 보이도록 그 안쪽에 그린다. */}
-                          {isMonth && cell.approvedOff ? (
-                            <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[inherit] ring-2 ring-ink-sub ring-inset" />
                           ) : null}
                           {cell.flag === "violation" ? (
                             <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-danger ring-inset" />

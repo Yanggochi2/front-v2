@@ -1,12 +1,8 @@
-import type { CreateWardDefaults, SelectWardInfo } from "@/types/onboarding.type";
+import type { CreateWardDefaults } from "@/types/onboarding.type";
 import { REQUIRED_STAFF_PER_DAY } from "./rules.constants";
 
 // 화면 안내 문구와 폼 기본값. 서버 데이터가 아니다.
 // TODO(🔶 RULE-01): 규칙 프리셋 목록은 미확정. 확정되면 서버 응답으로 대체한다.
-export const SELECT_WARD_INFO: SelectWardInfo = {
-  codePlaceholder: "코드를 입력해요 (예: AB12CD34)",
-};
-
 export const CREATE_WARD_DEFAULTS: CreateWardDefaults = {
   requiredStaff: { ...REQUIRED_STAFF_PER_DAY },
   presets: [
