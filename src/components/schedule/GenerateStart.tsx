@@ -6,8 +6,10 @@ import SchedulePageHeader from "@/components/ui/SchedulePageHeader";
 import { GENERATE_ESTIMATED_MINUTES } from "@/constants/schedule.constants";
 import { useState } from "react";
 import ScheduleToggle from "@/components/ui/ScheduleToggle";
+import OffTargetCard from "./OffTargetCard";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { shiftMonth } from "@/lib/schedulePeriod";
+import type { ApiOffTarget } from "@/types/rulesApi.type";
 
 const STEPS = [
   { title: "규칙 확인", description: "규칙 설정의 필수·권장 규칙을 지켜요" },
@@ -23,10 +25,12 @@ type Props = {
   yearMonth: string;
   // 이 달 작성 중 근무표의 근무가 들어 있는 칸·빈 칸 수. 근무표가 없거나 확정본이면 null
   draft: { entered: number; empty: number } | null;
+  // 이 달 OFF 목표. 근무표가 없으면 null, 불러오지 못하면 undefined(카드를 숨긴다)
+  offTarget: ApiOffTarget | null | undefined;
 };
 
 // 자동 생성 시작 화면 (/schedule/generate, jobId 없음)
-export default function GenerateStart({ yearMonth, draft }: Props) {
+export default function GenerateStart({ yearMonth, draft, offTarget }: Props) {
   const { start, loading, error } = useGenerationStart();
   // 넣어 둔 근무가 있고 빈 칸이 남아 있으면 넣어 둔 칸을 지키는 쪽을 기본으로 한다
   const [keepEntered, setKeepEntered] = useState(!!draft && draft.entered > 0 && draft.empty > 0);
@@ -83,6 +87,12 @@ export default function GenerateStart({ yearMonth, draft }: Props) {
           ) : null}
         </div>
       </section>
+      {offTarget !== undefined ? (
+        <section className="flex w-full flex-col items-start gap-4 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+          <h2 className="text-[20px] font-bold text-ink">{monthLabel(yearMonth)} OFF 목표</h2>
+          <OffTargetCard key={yearMonth} yearMonth={yearMonth} initial={offTarget} locked={draft === null} />
+        </section>
+      ) : null}
       <ol className="grid w-full grid-cols-3 gap-6">
         {STEPS.map((s, i) => (
           <li key={s.title} className="flex flex-col items-start gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">

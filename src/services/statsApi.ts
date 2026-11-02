@@ -18,7 +18,7 @@ export async function getStats(yearMonth?: string): Promise<StatsData> {
       eveningCount: s.E,
       nightCount: s.N,
       offCount: s.O,
-      offTarget: s.offTarget ?? 0,
+      offTarget: s.offTarget,
       weekendCount: s.weekendWork,
       holidayCount: s.holidayWork,
     }));

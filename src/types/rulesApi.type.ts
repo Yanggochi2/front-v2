@@ -47,7 +47,14 @@ export type ApiHoliday = {
 // RULE-05 요청
 export type ApiHolidayPutBody = { isHoliday: boolean; name?: string; reason?: string };
 
-// RULE-06/07 (🔶 결정 필요)
-// TODO: 백엔드 확정 후 결정 (OffTarget 응답 모양 없음)
-export type ApiOffTarget = { yearMonth?: string; targetCount?: number };
-export type ApiOffTargetPatchBody = { targetCount: number; reason?: string };
+// RULE-06/07. 10/26 계약 4장: 자동값(autoCount)은 주말∪등록 공휴일 + 1. 수간호사가 targetCount로 고치고, null로 보내면 자동으로 돌아간다.
+// 일반 간호사의 OFF 개수 기본 하드 제약이다. 그 달 근무표가 없으면 404 TARGET_NOT_FOUND, 확정본이면 고칠 때 409 SCHEDULE_CONFIRMED.
+export type ApiOffTarget = {
+  yearMonth: string;
+  targetCount: number;
+  autoCount: number;
+  holidayCount: number;
+  source: "AUTO" | "MANUAL";
+  reason: string | null;
+};
+export type ApiOffTargetPatchBody = { targetCount: number | null; reason?: string | null };
