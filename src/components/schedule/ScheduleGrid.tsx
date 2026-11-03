@@ -29,12 +29,13 @@ const MAX_ROW_PX = { month: 40, week: 56 } as const;
 const HEAD_PX = 48;
 // 하단 인원 행 높이. 월간은 30명과 함께 한 화면에 들어오도록 낮게 둔다.
 const COVERAGE_ROW_PX = { month: 26, week: 40 } as const;
-const COVERAGE_ROW_H = { month: "h-[26px]", week: "h-10" } as const;
+// 창 높이가 820px 이하(1366×768 노트북 등)인 월간은 28명이 한 화면에 들어오도록 행·글자를 한 단계 줄인다 (SHORT 클래스들)
+const COVERAGE_ROW_H = { month: "h-[26px] [@media(max-height:820px)]:h-[22px]", week: "h-10" } as const;
 
 // 하단 인원 행. 세로 스크롤에도 보이도록 아래에서부터 쌓아 고정한다 (bottom = 아래 행 높이의 합).
 const COVERAGE_ROWS: { duty: CoverageDuty; bottom: Record<ScheduleView, string> }[] = [
-  { duty: "D", bottom: { month: "bottom-[52px]", week: "bottom-20" } },
-  { duty: "E", bottom: { month: "bottom-[26px]", week: "bottom-10" } },
+  { duty: "D", bottom: { month: "bottom-[52px] [@media(max-height:820px)]:bottom-[44px]", week: "bottom-20" } },
+  { duty: "E", bottom: { month: "bottom-[26px] [@media(max-height:820px)]:bottom-[22px]", week: "bottom-10" } },
   { duty: "N", bottom: { month: "bottom-0", week: "bottom-0" } },
 ];
 
@@ -63,12 +64,12 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
   const nameW = isMonth ? "w-[112px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
   // 남는 높이는 표가 영역 높이까지(행당 MAX_ROW_PX 이하로) 행에 나눠 준다. 주간은 넉넉한 높이로 두고 넘치면 안에서 스크롤한다.
-  const rowH = isMonth ? (coverage ? "h-[27px] print:h-6" : "h-7 print:h-6") : "h-10";
+  const rowH = isMonth ? (coverage ? "h-[27px] print:h-6" : "h-7 print:h-6") + " [@media(max-height:820px)]:h-[21px]" : "h-10";
   // 칸 안의 근무 타일. 월간은 칸을 거의 채우고, 주간은 넓은 칸 가운데에 알약 모양으로 둔다.
   const tile = isMonth
-    ? { pad: "p-[3px]", radius: "rounded-[6px]", shape: "w-full" }
+    ? { pad: "p-[3px] [@media(max-height:820px)]:p-px", radius: "rounded-[6px]", shape: "w-full" }
     : { pad: "p-1", radius: "rounded-[10px]", shape: "w-full max-w-[148px]" };
-  const headH = "h-12";
+  const headH = isMonth ? "h-12 [@media(max-height:820px)]:h-10" : "h-12";
   const starts = groupStarts(rows);
   const tableMaxPx = HEAD_PX + (coverage ? COVERAGE_ROWS.length * COVERAGE_ROW_PX[view] : 0) + rows.length * MAX_ROW_PX[view];
 
@@ -95,12 +96,12 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
               >
                 <div className="flex flex-col items-center justify-center gap-0.5 leading-none">
                   {/* 주간 보기는 칸이 넓어 요일 자리에 공휴일 이름을 쓴다. 월간은 색으로만 구분하고 이름은 title로 */}
-                  <span className={`max-w-full truncate px-1 text-[15px] font-medium ${WEEKDAY_TEXT[d.tone]}`}>
+                  <span className={`max-w-full truncate px-1 text-[15px] font-medium ${isMonth ? "[@media(max-height:820px)]:text-[13px]" : ""} ${WEEKDAY_TEXT[d.tone]}`}>
                     {d.holidayName && !isMonth ? `${d.weekday} · ${d.holidayName}` : d.weekday}
                   </span>
                   {/* 오늘은 날짜를 버건디 원으로 표시한다 */}
                   <span
-                    className={`flex items-center justify-center rounded-full font-bold ${isMonth ? "size-7 text-[18px]" : "size-8 text-[20px]"} ${
+                    className={`flex items-center justify-center rounded-full font-bold ${isMonth ? "size-7 text-[18px] [@media(max-height:820px)]:size-6 [@media(max-height:820px)]:text-[16px]" : "size-8 text-[20px]"} ${
                       d.isToday ? "bg-primary text-white" : DAY_TEXT[d.tone]
                     }`}
                   >
@@ -126,10 +127,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
               <tr key={row.nurseKey} className="group">
                 <th
                   scope="row"
-                  className={`sticky left-0 z-10 border-r border-b border-line bg-white text-left leading-tight text-[20px] font-bold text-ink transition-colors group-hover:bg-primary-soft ${nameW} ${rowH} ${groupTop} pl-4`}
+                  className={`sticky left-0 z-10 border-r border-b border-line bg-white text-left leading-tight text-[20px] font-bold text-ink transition-colors group-hover:bg-primary-soft ${isMonth ? "[@media(max-height:820px)]:text-[17px] [@media(max-height:820px)]:leading-none" : ""} ${nameW} ${rowH} ${groupTop} pl-4`}
                 >
                   {start ? (
-                    <span className={`mb-0.5 block w-fit rounded-full bg-primary-soft px-1.5 leading-tight font-bold text-primary ${isMonth ? "text-[11px]" : "text-[13px]"}`}>
+                    // 낮은 화면의 월간은 행 높이가 모자라 그룹 이름을 숨기고 굵은 윗선으로만 구분한다
+                    <span className={`mb-0.5 block w-fit rounded-full bg-primary-soft px-1.5 leading-tight font-bold text-primary ${isMonth ? "text-[11px] [@media(max-height:820px)]:hidden" : "text-[13px]"}`}>
                       {start.name} · {start.count}명
                     </span>
                   ) : null}
@@ -141,7 +143,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                   const day = days[col];
                   const style = cell.duty ? DUTY_STYLE[cell.duty] : null;
                   const label = style ? (isMonth ? style.monthLabel : style.weekLabel) : "";
-                  const labelSize = isMonth ? (cell.duty === "AL" || cell.duty === "ED" ? "text-[15px]" : "text-[20px]") : cell.duty === "AL" || cell.duty === "ED" ? "text-[18px]" : "text-[22px]";
+                  const labelSize = isMonth
+                    ? cell.duty === "AL" || cell.duty === "ED"
+                      ? "text-[15px] [@media(max-height:820px)]:text-[13px]"
+                      : "text-[20px] [@media(max-height:820px)]:text-[17px]"
+                    : cell.duty === "AL" || cell.duty === "ED" ? "text-[18px]" : "text-[22px]";
                   return (
                     <td
                       key={col}
@@ -199,7 +205,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                   );
                 })}
                 {isMonth ? (
-                  <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft ${rowH} ${groupTop}`}>
+                  <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
                     {row.cells.filter((c) => c.duty === "O").length}
                   </td>
                 ) : (
@@ -242,7 +248,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                         ) : isMonth ? (
                           // 월간은 칸이 좁고 행이 낮아 칩 대신 숫자만. 모자란 날만 빨간 바탕으로 띄운다.
                           <span
-                            className={`inline-block rounded-[6px] px-1.5 text-[15px] leading-[20px] font-bold ${
+                            className={`inline-block rounded-[6px] px-1.5 text-[15px] leading-[20px] font-bold [@media(max-height:820px)]:text-[14px] [@media(max-height:820px)]:leading-[18px] ${
                               short ? "bg-danger-soft text-danger ring-1 ring-danger/25 ring-inset" : "text-ink-mute"
                             }`}
                           >

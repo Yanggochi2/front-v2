@@ -93,11 +93,14 @@ export default function ScheduleToolbar({
         <p className="pr-1 text-[16px] font-bold text-ink">칸 바꾸기</p>
         {DUTY_ORDER.map((code) => {
           const active = brush === code;
+          // 1440px보다 좁은 화면(노트북)은 도구 모음이 한 줄에 들어가도록 "D 데이"를 "D"로 줄인다
+          const [short, ...rest] = DUTY_STYLE[code].brushLabel.split(" ");
           return (
             <button
               key={code}
               type="button"
               aria-pressed={active}
+              aria-label={DUTY_STYLE[code].brushLabel}
               onClick={() => onBrushChange(active ? null : code)}
               className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                 active
@@ -107,7 +110,8 @@ export default function ScheduleToolbar({
             >
               {/* 근무 색 견본: 시트 칸과 같은 색이라 눌러 둔 근무를 바로 알아본다 */}
               <span aria-hidden className={`size-4 rounded-[5px] border ${DUTY_STYLE[code].cell.split(" ")[0]} ${DUTY_STYLE[code].edge}`} />
-              {DUTY_STYLE[code].brushLabel}
+              {short}
+              {rest.length > 0 ? <span className="hidden min-[1440px]:inline">{rest.join(" ")}</span> : null}
             </button>
           );
         })}
@@ -120,20 +124,22 @@ export default function ScheduleToolbar({
           onClick={onUndo}
           disabled={!canUndo}
           title="Ctrl+Z"
+          aria-label="되돌리기"
           className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           <HistoryIcon />
-          되돌리기
+          <span className="hidden min-[1440px]:inline">되돌리기</span>
         </button>
         <button
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
           title="Ctrl+Y"
+          aria-label="다시 실행"
           className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           <HistoryIcon redo />
-          다시 실행
+          <span className="hidden min-[1440px]:inline">다시 실행</span>
         </button>
         <span aria-hidden className="mx-1 h-6 w-px bg-line" />
         <ScheduleToggle checked={checkOnly} onChange={onCheckOnlyChange} label="확인 필요한 칸만 보기" />

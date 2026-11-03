@@ -48,6 +48,11 @@
   --color-duty-al: #ddf3e6;
   --color-duty-al-ink: #1e7a4c;
   --color-duty-al-edge: #2fb36e;
+  /* 시트 칸: 진한 배경 + 흰 글씨 (11/2 클라이언트 요청). 흰 글씨 대비 D 3.5·E 4.1·N 6.3·AL 5.3 (칸 글씨는 굵은 20px라 큰 글씨 기준 3:1 이상) */
+  --color-duty-d-solid: #b97d00;
+  --color-duty-e-solid: #d9501f;
+  --color-duty-n-solid: #4f46e5;
+  --color-duty-al-solid: #1e7a4c;
 
   /* 랜딩(/) 전용. 값은 랜딩 시안(아티팩트) 기준 */
   --font-display: var(--font-black-han-sans), var(--font-noto-sans-kr), system-ui, sans-serif;
