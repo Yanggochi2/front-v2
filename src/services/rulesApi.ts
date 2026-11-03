@@ -1,5 +1,5 @@
 import { RULE_FILTER_CHIPS } from "@/constants/rules.constants";
-import { BUILT_IN_RULE_CODES, findRuleTemplate, ruleSentence } from "@/constants/ruleTemplates";
+import { BUILT_IN_RULE_CODES, findRuleTemplate, HIDDEN_RULE_CODES, ruleSentence } from "@/constants/ruleTemplates";
 import { ApiError, apiRequest } from "@/lib/apiClient";
 import type { HolidayItem, RuleItem, RulesData, RuleStrength } from "@/types/rules.type";
 import type {
@@ -43,7 +43,7 @@ export function toRuleItem(rule: ApiRule): RuleItem {
 export async function getRules(): Promise<RulesData> {
   // RULE-01
   const rules = await apiRequest<ApiRule[]>(RULES);
-  return { filters: RULE_FILTER_CHIPS, rules: rules.map(toRuleItem) };
+  return { filters: RULE_FILTER_CHIPS, rules: rules.filter((r) => !HIDDEN_RULE_CODES.includes(r.code)).map(toRuleItem) };
 }
 
 // RULE-02.

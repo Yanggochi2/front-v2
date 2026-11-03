@@ -6,8 +6,8 @@ import LandingStage from "@/components/landing/LandingStage";
 import {
   LANDING_AUDIT_ROWS,
   LANDING_DUTY_LEGEND,
-  LANDING_REQUEST_ROWS,
   LANDING_RULE_ROWS,
+  LANDING_SHARE_ROWS,
 } from "@/constants/landing.constants";
 
 const SECTION = "flex min-h-svh flex-col justify-start pt-[max(15vh,112px)] pb-20";
@@ -58,8 +58,8 @@ export default function LandingPage() {
                 <br />한 번에.
               </h2>
               <p className={LEAD}>
-                인원과 규칙을 읽고 31일치를 한 번에 채워요. <b className="font-bold text-white">승인된 연차는 먼저</b>,
-                희망 오프는 가능한 만큼 넣고요. 마음에 안 드는 칸만 고치면 돼요.
+                인원과 규칙을 읽고 31일치를 한 번에 채워요. <b className="font-bold text-white">연차·교육은 그대로 두고</b>
+                나머지를 채워요. 마음에 안 드는 칸만 고치면 돼요.
               </p>
               <div aria-label="근무 색 안내" className="mt-[26px] flex flex-wrap gap-2.5">
                 {LANDING_DUTY_LEGEND.map((d) => (
@@ -95,18 +95,19 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="request" className={SECTION}>
+        <section id="share" className={SECTION}>
           <div className={WRAP}>
             <div className={SPLIT}>
               <h2 className={H2}>
-                메신저 대신,
+                확정본은,
                 <br />
-                신청함 하나.
+                링크 하나로.
               </h2>
               <p className={LEAD}>
-                연차와 희망 오프를 한곳에 모아요. <b className="font-bold text-white">승인한 것만</b> 자동 생성에 들어가요.
+                확정한 근무표를 링크로 보내면 간호사는 <b className="font-bold text-white">로그인 없이</b> 바로 봐요. 링크를 바꾸거나 끄면
+                이전 링크는 더 이상 열리지 않아요.
               </p>
-              <LandingPanel rows={LANDING_REQUEST_ROWS} className={SPLIT_PANEL} />
+              <LandingPanel rows={LANDING_SHARE_ROWS} className={SPLIT_PANEL} />
             </div>
           </div>
         </section>

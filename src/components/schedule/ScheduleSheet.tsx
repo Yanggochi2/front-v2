@@ -324,7 +324,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
                 <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
                 <p className="text-[22px] font-bold text-ink">아직 비어 있어요</p>
                 <p className="text-[16px] font-medium text-ink-sub">
-                  칸을 눌러 근무를 넣거나, 자동 생성으로 한 번에 채워요. 연차는 이미 들어가 있어요.
+                  칸을 눌러 근무를 넣거나, 자동 생성으로 한 번에 채워요.
                 </p>
                 {generation.error ? (
                   <p role="alert" className="text-[16px] font-bold text-danger">

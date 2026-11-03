@@ -172,6 +172,9 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
   },
 ];
 
+// 간호사 신청(10/26 범위에서 빠짐)이 있어야 의미가 있는 규칙. 입력할 방법이 없어 규칙 화면에 보이지 않는다
+export const HIDDEN_RULE_CODES = ["WISH_OFF_IGNORED", "WISH_DUTY_IGNORED"];
+
 // 병동이 지울 수 없는 기본 규칙. 백엔드 규칙은 모두 기본 규칙이다
 export const BUILT_IN_RULE_CODES = RULE_TEMPLATES.filter((t) => !t.addable).map((t) => t.code);
 
