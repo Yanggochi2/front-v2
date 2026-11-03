@@ -9,12 +9,14 @@ import {
   REGISTRABLE_STATUSES,
   SKILL_LEVELS,
 } from "@/constants/nurses.constants";
-import type { DutyRole, NurseDraft } from "@/types/nurses.type";
+import type { DutyRole, NurseDraft, NurseDraftErrors } from "@/types/nurses.type";
 
-const inputCls =
+const baseInputCls =
   "h-14 w-full rounded-[14px] bg-surface px-5 text-[18px] font-medium text-ink placeholder:text-ink-faint";
+// 오류가 있는 칸은 빨간 테두리
+const inputCls = (error?: string) => `${baseInputCls}${error ? " ring-2 ring-danger ring-inset" : ""}`;
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -22,6 +24,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         {hint ? <span className="text-[15px] font-medium text-ink-faint">{hint}</span> : null}
       </div>
       {children}
+      {error ? <p className="text-[16px] font-medium text-danger">{error}</p> : null}
     </div>
   );
 }
@@ -31,39 +34,43 @@ const DUTY_ROLES: DutyRole[] = ["GENERAL", "CHARGE", "NEW", "NIGHT_ONLY"];
 type Props = {
   draft: NurseDraft;
   onChange: (patch: Partial<NurseDraft>) => void;
+  /** 칸별 오류 문구 (보내기 전 검사, 서버 거절) */
+  errors?: NurseDraftErrors;
   /** 담당 신입으로 고를 수 있는 재직 신입 간호사. 불러오지 못했으면 null */
   newNurses: { id: string; name: string }[] | null;
 };
 
 // 간호사 등록 입력칸. 2열 grid 안에 놓는다 (간호사 등록·수정 화면에서 같이 쓴다).
-export default function NurseProfileFields({ draft, onChange, newNurses }: Props) {
+export default function NurseProfileFields({ draft, onChange, newNurses, errors = {} }: Props) {
   const togglePrecepted = (id: string) =>
     onChange({ preceptorOf: draft.preceptorOf.includes(id) ? draft.preceptorOf.filter((x) => x !== id) : [...draft.preceptorOf, id] });
 
   return (
     <>
-      <Field label="이름">
+      <Field label="이름" error={errors.name}>
         <input
           type="text"
           required
+          aria-invalid={errors.name ? true : undefined}
           maxLength={50}
           placeholder="이름을 입력해요"
           value={draft.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          className={inputCls}
+          className={inputCls(errors.name)}
         />
       </Field>
-      <Field label="입사 연도">
+      <Field label="입사 연도" error={errors.hireYear}>
         <input
           type="number"
           required
-          min={1970}
+          aria-invalid={errors.hireYear ? true : undefined}
+          min={1900}
           max={new Date().getFullYear()}
           placeholder="예: 2022"
           aria-label="입사 연도"
           value={draft.hireYear}
           onChange={(e) => onChange({ hireYear: e.target.value })}
-          className={inputCls}
+          className={inputCls(errors.hireYear)}
         />
       </Field>
 
@@ -106,15 +113,16 @@ export default function NurseProfileFields({ draft, onChange, newNurses }: Props
         </Field>
       ) : null}
 
-      <Field label="총 경력" hint="입사 전 경력까지 합쳐요">
+      <Field label="총 경력" hint="입사 전 경력까지 합쳐요" error={errors.career}>
         <div className="flex items-center gap-2.5">
           <input
             type="number"
             min={0}
             aria-label="경력 년"
+            aria-invalid={errors.career ? true : undefined}
             value={draft.careerYears}
             onChange={(e) => onChange({ careerYears: e.target.value })}
-            className={`${inputCls} max-w-[150px]`}
+            className={`${inputCls(errors.career)} max-w-[150px]`}
           />
           <span className="text-[18px] font-medium text-ink-sub">년</span>
           <input
@@ -122,9 +130,10 @@ export default function NurseProfileFields({ draft, onChange, newNurses }: Props
             min={0}
             max={11}
             aria-label="경력 개월"
+            aria-invalid={errors.career ? true : undefined}
             value={draft.careerMonths}
             onChange={(e) => onChange({ careerMonths: e.target.value })}
-            className={`${inputCls} max-w-[150px]`}
+            className={`${inputCls(errors.career)} max-w-[150px]`}
           />
           <span className="text-[18px] font-medium text-ink-sub">개월</span>
         </div>
@@ -153,14 +162,15 @@ export default function NurseProfileFields({ draft, onChange, newNurses }: Props
           ))}
         </div>
       </Field>
-      <Field label="소속 시작일" hint="이 날짜 전 칸은 편집할 수 없어요">
+      <Field label="소속 시작일" hint="이 날짜 전 칸은 편집할 수 없어요" error={errors.periodStart}>
         <input
           type="date"
           required
           aria-label="소속 시작일"
+          aria-invalid={errors.periodStart ? true : undefined}
           value={draft.periodStart}
           onChange={(e) => onChange({ periodStart: e.target.value })}
-          className={inputCls}
+          className={inputCls(errors.periodStart)}
         />
       </Field>
     </>
