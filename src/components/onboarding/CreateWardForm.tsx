@@ -18,6 +18,8 @@ const labelClass = "text-lg font-bold text-ink";
 const THIS_YEAR = Number(todayKst().yearMonth.slice(0, 4));
 
 const toInt = (v: string) => (v.trim() === "" ? NaN : Number(v));
+// 경력 칸은 placeholder가 0이라 비워 두면 0년·0개월로 본다
+const toCount = (v: string) => (v.trim() === "" ? 0 : Number(v));
 
 export default function CreateWardForm({ defaults, userName }: Props) {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function CreateWardForm({ defaults, userName }: Props) {
 
   const { submit, loading, error } = useSubmit();
   const year = toInt(joinedYear);
-  const career = toInt(careerYears) * 12 + toInt(careerMonths);
+  const career = toCount(careerYears) * 12 + toCount(careerMonths);
   const canSubmit =
     hospital.trim() !== "" &&
     ward.trim() !== "" &&
