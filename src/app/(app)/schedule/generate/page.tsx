@@ -19,14 +19,14 @@ export default async function ScheduleGeneratePage({ searchParams }: { searchPar
   if (!jobId) {
     const { yearMonth } = resolvePeriod(first(sp.ym));
     // 불러오지 못하면 "넣어 둔 칸 지키기"를 보여 주지 않고 시작만 할 수 있다 (시작할 때 다시 확인한다)
-    const [draft, offTarget] = await Promise.all([
+    const [info, offTarget] = await Promise.all([
       getGenerateStartInfo(yearMonth).catch(() => null),
       // 불러오지 못하면(서버 오류) OFF 목표 카드를 숨긴다. 근무표가 없으면 null
       getOffTarget(yearMonth).catch(() => undefined),
     ]);
     return (
       <div className="flex flex-col gap-8 px-12 pt-12 pb-10">
-        <GenerateStart yearMonth={yearMonth} draft={draft} offTarget={offTarget} />
+        <GenerateStart yearMonth={yearMonth} draft={info === "LOCKED" ? null : info} locked={info === "LOCKED"} offTarget={offTarget} />
       </div>
     );
   }

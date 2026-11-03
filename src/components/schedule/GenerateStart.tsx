@@ -25,12 +25,14 @@ type Props = {
   yearMonth: string;
   // 이 달 작성 중 근무표의 근무가 들어 있는 칸·빈 칸 수. 근무표가 없거나 확정본이면 null
   draft: { entered: number; empty: number } | null;
+  // 이 달 근무표가 확정·보관된 상태. 확정을 취소하기 전에는 시작할 수 없다
+  locked: boolean;
   // 이 달 OFF 목표. 근무표가 없으면 null, 불러오지 못하면 undefined(카드를 숨긴다)
   offTarget: ApiOffTarget | null | undefined;
 };
 
 // 자동 생성 시작 화면 (/schedule/generate, jobId 없음)
-export default function GenerateStart({ yearMonth, draft, offTarget }: Props) {
+export default function GenerateStart({ yearMonth, draft, locked, offTarget }: Props) {
   const { start, loading, error } = useGenerationStart();
   // 넣어 둔 근무가 있고 빈 칸이 남아 있으면 넣어 둔 칸을 지키는 쪽을 기본으로 한다
   const [keepEntered, setKeepEntered] = useState(!!draft && draft.entered > 0 && draft.empty > 0);
@@ -75,12 +77,20 @@ export default function GenerateStart({ yearMonth, draft, offTarget }: Props) {
             variant="primary"
             size="bar"
             onClick={() => start(yearMonth, keepEntered)}
-            disabled={loading}
+            disabled={loading || locked}
             className="disabled:opacity-50"
           >
             {loading ? "만드는 중…" : "자동 생성 시작"}
           </ScheduleButton>
-          {error ? (
+          {locked ? (
+            <p className="text-[17px] font-bold text-ink-sub">
+              확정된 근무표예요.{" "}
+              <Link href={`/schedule?view=month&ym=${yearMonth}`} className="text-primary underline underline-offset-4">
+                근무표에서 확정을 취소
+              </Link>
+              하면 다시 짤 수 있어요.
+            </p>
+          ) : error ? (
             <p role="alert" className="text-[17px] font-bold text-danger">
               {error}
             </p>
