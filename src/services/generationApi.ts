@@ -64,11 +64,11 @@ function enteredCells(schedule: ApiSchedule): ApiFixedCell[] {
     .map((c) => ({ nurseId: c.nurseId, date: c.date }));
 }
 
-// 자동 생성 시작 화면의 "넣어 둔 칸 지키기" 기본값용. 근무표가 없으면 null.
-export async function getGenerateStartInfo(yearMonth: string): Promise<{ entered: number; empty: number } | null> {
+// 자동 생성 시작 화면의 "넣어 둔 칸 지키기" 기본값용. 근무표가 없으면 null, 확정·보관된 근무표면 "LOCKED".
+export async function getGenerateStartInfo(yearMonth: string): Promise<{ entered: number; empty: number } | "LOCKED" | null> {
   try {
     const schedule = await getScheduleByYearMonth(yearMonth);
-    if (schedule.status !== "DRAFT") return null;
+    if (schedule.status !== "DRAFT") return "LOCKED";
     return {
       entered: enteredCells(schedule).length,
       empty: schedule.cells.filter((c) => c.dutyCode === null && c.editable).length,
@@ -91,7 +91,7 @@ export async function startGenerationForMonth(yearMonth: string, idempotencyKey:
     schedule = await createSchedule(yearMonth);
   }
   if (schedule.status !== "DRAFT") {
-    throw new ApiError(409, { code: "INVALID_SCHEDULE_STATE", message: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요." });
+    throw new ApiError(409, { code: "SCHEDULE_CONFIRMED", message: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요." });
   }
   const fixedCells = keepEntered ? enteredCells(schedule) : [];
   return startGeneration(schedule.id, { fixedCells, maxSeconds: GENERATE_MAX_SECONDS }, idempotencyKey);
