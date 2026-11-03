@@ -12,7 +12,7 @@ export default function GeneratePartialApplyButton({ jobId, yearMonth }: { jobId
 
   async function apply() {
     if (await submit(() => applyPartialResultForJob(jobId))) {
-      router.push(`/schedule?ym=${yearMonth}`);
+      router.push(`/schedule?view=month&ym=${yearMonth}`);
       router.refresh();
     }
   }

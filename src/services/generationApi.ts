@@ -100,7 +100,7 @@ export async function startGenerationForMonth(yearMonth: string, idempotencyKey:
 // 작업 상태별로 이동할 화면. 아직 진행 중이면 진행 화면.
 // 지금 백엔드는 요청 안에서 생성을 끝내므로 시작 응답이 바로 SUCCEEDED일 수 있다.
 export function generationHref(job: ApiGenerationJob, yearMonth: string): string {
-  if (job.status === "SUCCEEDED" || job.status === "STOPPED") return `/schedule?ym=${yearMonth}`;
+  if (job.status === "SUCCEEDED" || job.status === "STOPPED") return `/schedule?view=month&ym=${yearMonth}`;
   if (job.status === "NO_SOLUTION" || job.status === "FAILED") return `/schedule/generate/failed?jobId=${job.id}`;
   return `/schedule/generate?jobId=${job.id}`;
 }

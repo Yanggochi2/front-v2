@@ -12,7 +12,7 @@ export default function GenerateStopButton({ jobId, yearMonth }: { jobId: string
 
   async function stop() {
     if (await submit(() => stopGeneration(jobId, { applyBestResult: true }))) {
-      router.replace(`/schedule?ym=${yearMonth}`);
+      router.replace(`/schedule?view=month&ym=${yearMonth}`);
       router.refresh();
     }
   }

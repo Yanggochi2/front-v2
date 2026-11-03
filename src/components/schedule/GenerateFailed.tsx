@@ -42,7 +42,7 @@ export default function GenerateFailed({ data }: { data: GenerationFailure }) {
       ) : null}
       <div className="flex flex-wrap items-start gap-3">
         <GeneratePartialApplyButton jobId={data.jobId} yearMonth={data.yearMonth} />
-        <ScheduleButton variant="neutral" size="sm" href={data.yearMonth ? `/schedule?ym=${data.yearMonth}` : "/schedule"}>
+        <ScheduleButton variant="neutral" size="sm" href={data.yearMonth ? `/schedule?view=month&ym=${data.yearMonth}` : "/schedule"}>
           취소
         </ScheduleButton>
       </div>
