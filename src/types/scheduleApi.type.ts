@@ -126,6 +126,8 @@ export type ApiNurseStatistic = {
   AL: number;
   ED?: number;
   offTarget: number | null;
+  remainingOff?: number; // max(offTarget - O, 0). AL·ED는 O로 세지 않는다 (백엔드 #88)
+  offCarry?: number; // 지난달에 못 써서 이월된 O 수 (offTarget에 이미 들어 있다)
   weekendWork: number;
   holidayWork: number;
 };

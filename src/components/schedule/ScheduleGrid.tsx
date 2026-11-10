@@ -71,6 +71,8 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
     : { pad: "p-1", radius: "rounded-[10px]", shape: "w-full max-w-[148px]" };
   const headH = isMonth ? "h-12 [@media(max-height:820px)]:h-10" : "h-12";
   const starts = groupStarts(rows);
+  // 수간호사 화면은 남은 OFF(11/2 미팅), OFF 목표를 받지 않는 공유 화면은 그 달 OFF 수를 보인다
+  const showRemaining = rows.some(({ row }) => row.offTarget !== undefined);
   const tableMaxPx = HEAD_PX + (coverage ? COVERAGE_ROWS.length * COVERAGE_ROW_PX[view] : 0) + rows.length * MAX_ROW_PX[view];
 
   return (
@@ -112,7 +114,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
             ))}
             {isMonth ? (
               <th scope="col" className={`sticky top-0 right-0 z-30 w-[72px] border-b border-line bg-canvas text-[16px] font-bold text-ink-sub ${headH}`}>
-                OFF 수
+                {showRemaining ? "남은 OFF" : "OFF 수"}
               </th>
             ) : (
               <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />
@@ -206,7 +208,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                 })}
                 {isMonth ? (
                   <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
-                    {row.cells.filter((c) => c.duty === "O").length}
+                    <OffCount row={row} />
                   </td>
                 ) : (
                   <td className={`pl-4 ${rowH}`}>
@@ -270,5 +272,17 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
         ) : null}
       </table>
     </div>
+  );
+}
+
+// 남은 OFF = max(OFF 목표 - 넣은 O, 0). 백엔드 statistics.remainingOff와 같은 식이지만,
+// 저장 전에 칸을 고쳐도 바로 바뀌도록 지금 칸으로 센다 (월간은 그 달 모든 날짜를 갖고 있다).
+function OffCount({ row }: { row: ScheduleRow }) {
+  const offs = row.cells.filter((c) => c.duty === "O").length;
+  if (row.offTarget === undefined) return <>{offs}</>;
+  return (
+    <span title={`OFF ${offs}개 넣음 · 목표 ${row.offTarget}개`} className={offs > row.offTarget ? "text-danger" : ""}>
+      {Math.max(row.offTarget - offs, 0)}
+    </span>
   );
 }

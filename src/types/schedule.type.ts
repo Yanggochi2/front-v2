@@ -46,6 +46,8 @@ export type ScheduleRow = {
   role?: NurseRole; // 정렬용(수간호사 먼저). 받은 것만
   dutyRole?: DutyRole; // 정렬용. 받은 것만
   careerMonths?: number; // 정렬용 총경력(개월). 받은 것만
+  // 그 달 OFF 목표(이월 포함). 근무표 응답 statistics에서 받는다. 없으면(공유 화면 등) 남은 OFF 대신 OFF 수를 보인다
+  offTarget?: number;
   cells: ScheduleCell[];
   needsCheck?: boolean;
 };
