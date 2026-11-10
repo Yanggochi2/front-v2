@@ -5,14 +5,22 @@ import { getSharedSchedule, type SharedScheduleData } from "@/services/sharingAp
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// 공유 링크로 보는 확정 근무표 (10/26 계약 5장). 정렬은 ?sort=name 이면 이름순, 없으면 서버 기본(숙련도순).
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+// 공유 링크로 보는 확정 근무표 (10/26 계약 5장).
+// ?view=week|month(없으면 서버 defaultView) · ?week=N · ?sort=name(없으면 서버 기본 숙련도순)
 export default async function SharedSchedulePage({ params, searchParams }: PageProps<"/shared/[token]"> & { searchParams: SearchParams }) {
   const { token } = await params;
-  const sort = (await searchParams).sort === "name" ? "name" : undefined;
+  const q = await searchParams;
+  const view = one(q.view);
   let data: SharedScheduleData | null = null;
   let gone = false;
   try {
-    data = await getSharedSchedule(token, sort);
+    data = await getSharedSchedule(token, {
+      sort: one(q.sort) === "name" ? "name" : undefined,
+      view: view === "week" || view === "month" ? view : undefined,
+      week: one(q.week),
+    });
   } catch (e) {
     // 링크를 다시 만들었거나 공유를 껐거나 확정을 취소하면 404
     gone = e instanceof ApiError && e.status === 404;
