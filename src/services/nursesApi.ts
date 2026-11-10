@@ -104,3 +104,9 @@ export async function retireNurse(id: string, affiliationEnd: string): Promise<N
   });
   return mapNurse(nurse);
 }
+
+// 간호사 삭제 (204). 명단에서는 바로 빠지지만 과거 근무표를 지키려고 백엔드가 오늘 날짜로 퇴사 처리한다.
+// 오늘 뒤의 작성 중 근무표 칸은 지워지고, 확정된 근무표는 그대로 둔다 (백엔드 docs/client-1026-api.md 7장).
+export function deleteNurse(id: string): Promise<void> {
+  return apiRequest<void>(`${NURSES_PATH}/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

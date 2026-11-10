@@ -1,5 +1,6 @@
 import RnChip from "@/components/ui/RnChip";
 import RnButton from "@/components/ui/RnButton";
+import NurseDeleteButton from "./NurseDeleteButton";
 import { DUTY_ROLE_LABEL, NURSE_ROLE_LABEL, NURSE_STATUS_LABEL, PRECEPTOR_LABEL } from "@/constants/nurses.constants";
 import type { Nurse } from "@/types/nurses.type";
 
@@ -65,9 +66,13 @@ export default function NursesTable({ items }: { items: Nurse[] }) {
                   {n.status === "RETIRED" ? (
                     <span className="text-ink-mute">수정 불가</span>
                   ) : (
-                    <RnButton variant="secondary" href={`/nurses/${encodeURIComponent(n.id)}/edit`}>
-                      수정
-                    </RnButton>
+                    <span className="inline-flex gap-2">
+                      <RnButton variant="secondary" href={`/nurses/${encodeURIComponent(n.id)}/edit`}>
+                        수정
+                      </RnButton>
+                      {/* 수간호사 본인 행은 지우지 않는다 (병동에 수간호사가 없어진다) */}
+                      {n.role === "HEAD_NURSE" ? null : <NurseDeleteButton id={n.id} name={n.name} />}
+                    </span>
                   )}
                 </td>
               </tr>

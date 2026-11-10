@@ -6,5 +6,6 @@ export const BUTTON_BASE =
 export const BUTTON_TONE = {
   primary: "bg-primary text-white shadow-cta hover:bg-primary-strong",
   secondary: "border border-line bg-white text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] hover:border-grid hover:bg-canvas hover:text-ink",
+  danger: "bg-danger text-white hover:bg-danger/90",
   soft: "bg-primary-soft text-primary ring-1 ring-primary/15 ring-inset hover:ring-primary/40",
 } as const;
