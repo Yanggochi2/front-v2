@@ -15,6 +15,7 @@ export class ApiError extends Error {
   readonly code: string;
   readonly traceId?: string;
   readonly fieldErrors: ApiErrorBody["fieldErrors"];
+  readonly details: ApiErrorBody["details"];
 
   constructor(status: number, body: Partial<ApiErrorBody>) {
     super(body.message ?? "요청에 실패했어요.");
@@ -23,6 +24,7 @@ export class ApiError extends Error {
     this.code = body.code ?? "INTERNAL_ERROR";
     this.traceId = body.traceId;
     this.fieldErrors = body.fieldErrors;
+    this.details = body.details;
   }
 }
 
@@ -32,6 +34,8 @@ type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   query?: Query;
   body?: unknown;
+  // 파일 업로드(multipart). body 대신 넘기고, Content-Type은 브라우저가 경계값과 함께 붙인다.
+  formData?: FormData;
   // 중복 실행 위험이 있는 POST(생성, 승인, 확정, 자동 생성 시작 등)에 넘긴다.
   idempotencyKey?: string;
   // 근무표 편집 잠금을 쓰는 변경 요청에 넘긴다.
@@ -90,7 +94,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     headers,
     credentials: options.anonymous ? "omit" : "include",
     cache: "no-store",
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: options.formData ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
   });
 
   if (!response.ok) {
