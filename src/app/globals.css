@@ -163,6 +163,12 @@ html:has(.landing-root) {
   zoom: var(--ui-zoom);
 }
 
+/* 큰 글씨 (11/3 미팅 가독성 모드): 수간호사 화면을 80% 대신 원래 크기(100%)로 보여 준다.
+   월간 근무표가 한 화면에 다 들어오지 않으면 표 안에서 스크롤한다. */
+.ui-zoom-large {
+  --ui-zoom: 1;
+}
+
 .h-screen-ui {
   height: calc(100vh / var(--ui-zoom));
 }
