@@ -124,6 +124,7 @@ HN = HEAD_NURSE, 구성원 = 병동 구성원. P2 = 2순위. (결정) = 명세�
 - Nurse: id, name, role, dutyRole, status, joinedAt, careerMonths, skillLevel, affiliationStart, affiliationEnd, preceptorOf, version
 - Rule: id, code, name, severity, enabled, parameters, version
 - Schedule: id, yearMonth, status, version, nurses[], cells[], coverage[], statistics[], confirmedAt
+  - statistics[]: 간호사별 D·E·N·O·AL·ED 수, offTarget, remainingOff(= max(offTarget − O, 0), backend #88), offCarry, weekendWork, holidayWork
 - ScheduleCell: nurseId, date, dutyCode, editable
 - Violation: id, severity, ruleId, nurseId, date, currentValue, message
 - Coverage: date, dutyCode, actualCount, requiredCount, status UNDER|MET|OVER
