@@ -263,8 +263,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
             </div>
             <div className="ml-auto flex items-center gap-3 print:hidden">
               <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport />
-              {/* 공유 링크는 확정·지난 근무표에만 만들 수 있다 */}
-              {api.status === "CONFIRMED" || api.status === "ARCHIVED" ? <ScheduleShareLink scheduleId={api.scheduleId} /> : null}
+              {/* 공유 링크는 확정·지난 근무표에만 만들 수 있다. 작성 중에는 버튼을 막아 두고 이유를 알려 준다 */}
+              <ScheduleShareLink scheduleId={api.scheduleId} shareable={api.status === "CONFIRMED" || api.status === "ARCHIVED"} />
               <span aria-hidden className="h-7 w-px bg-line" />
               {api.status === "DRAFT" && editor.issues.length > 0 ? (
                 <ScheduleIssues issues={editor.issues} names={names} onPick={focusIssue} />
