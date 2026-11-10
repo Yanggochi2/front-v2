@@ -169,6 +169,13 @@ html:has(.landing-root) {
   --ui-zoom: 1;
 }
 
+/* 인쇄 배치(A4 가로, print:[zoom:0.86])는 80% 기준이라 인쇄할 때는 큰 글씨를 끈다 */
+@media print {
+  .ui-zoom-large {
+    --ui-zoom: 0.8;
+  }
+}
+
 .h-screen-ui {
   height: calc(100vh / var(--ui-zoom));
 }
