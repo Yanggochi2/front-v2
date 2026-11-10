@@ -53,14 +53,7 @@ export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleI
 
   return (
     <>
-      <ScheduleButton
-        variant="primary-soft"
-        size="xs"
-        onClick={() => setOpen(true)}
-        disabled={!scheduleId || !shareable}
-        title={shareable ? undefined : "확정한 뒤에 공유 링크를 만들 수 있어요"}
-        className="disabled:opacity-50"
-      >
+      <ScheduleButton variant="primary-soft" size="xs" onClick={() => setOpen(true)} disabled={!scheduleId}>
         공유 링크
       </ScheduleButton>
       {open ? (
@@ -75,8 +68,12 @@ export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleI
             {url ? (
               <p className="rounded-[14px] bg-surface px-5 py-4 font-mono text-[16px] break-all text-ink">{url}</p>
             ) : (
-              <p className="text-[16px] font-medium text-ink-mute">
-                {revoked ? "공유를 껐어요. 이전 링크는 더 이상 열리지 않아요." : "이미 만든 링크가 있다면, 새로 만들면 이전 링크는 열리지 않아요."}
+              <p className={shareable ? "text-[16px] font-medium text-ink-mute" : "rounded-[14px] bg-surface px-5 py-4 text-[17px] font-bold text-ink-sub"}>
+                {!shareable
+                  ? "확정한 뒤에 공유 링크를 만들 수 있어요. 근무표를 확정하면 이 창에서 링크를 만들고 끌 수 있어요."
+                  : revoked
+                    ? "공유를 껐어요. 이전 링크는 더 이상 열리지 않아요."
+                    : "이미 만든 링크가 있다면, 새로 만들면 이전 링크는 열리지 않아요."}
               </p>
             )}
             {error ? (
@@ -85,7 +82,7 @@ export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleI
               </p>
             ) : null}
             <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-              <button type="button" onClick={revoke} disabled={loading} className="mr-auto h-11 rounded-[12px] px-3 text-[17px] font-bold text-danger transition-colors hover:bg-danger-soft disabled:opacity-50">
+              <button type="button" onClick={revoke} disabled={loading || !shareable} className="mr-auto h-11 rounded-[12px] px-3 text-[17px] font-bold text-danger transition-colors hover:bg-danger-soft disabled:opacity-50">
                 공유 끄기
               </button>
               <ScheduleButton variant="neutral" size="sm" onClick={() => setOpen(false)} disabled={loading}>
@@ -101,7 +98,7 @@ export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleI
                   </ScheduleButton>
                 </>
               ) : (
-                <ScheduleButton variant="brand" size="sm" onClick={issue} disabled={loading}>
+                <ScheduleButton variant="brand" size="sm" onClick={issue} disabled={loading || !shareable}>
                   {loading ? "만드는 중…" : "링크 만들기"}
                 </ScheduleButton>
               )}
