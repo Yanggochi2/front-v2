@@ -7,7 +7,7 @@ import { issueShareLink, revokeShareLink } from "@/services/sharingApi";
 
 // 확정 근무표의 공유 링크 만들기·복사·다시 만들기·끄기 (10/26 계약 5장).
 // 서버는 지금 링크가 있는지 알려 주지 않고 만든 순간에만 주소를 준다. 그래서 이 창에서 만든 링크만 보여 준다.
-export default function ScheduleShareLink({ scheduleId }: { scheduleId: string }) {
+export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleId: string; shareable: boolean }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [revoked, setRevoked] = useState(false);
@@ -53,7 +53,14 @@ export default function ScheduleShareLink({ scheduleId }: { scheduleId: string }
 
   return (
     <>
-      <ScheduleButton variant="primary-soft" size="xs" onClick={() => setOpen(true)} disabled={!scheduleId}>
+      <ScheduleButton
+        variant="primary-soft"
+        size="xs"
+        onClick={() => setOpen(true)}
+        disabled={!scheduleId || !shareable}
+        title={shareable ? undefined : "확정한 뒤에 공유 링크를 만들 수 있어요"}
+        className="disabled:opacity-50"
+      >
         공유 링크
       </ScheduleButton>
       {open ? (
