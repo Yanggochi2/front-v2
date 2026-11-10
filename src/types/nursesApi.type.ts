@@ -49,6 +49,12 @@ export type ApiNurseMutationResult = {
   warnings: string[];
 };
 
+// 엑셀 일괄 등록 성공 응답 (백엔드 docs/client-1026-api.md 7장, 201)
+export type ApiNurseImportResult = { createdCount: number; nurses: ApiNurse[] };
+// 422 INVALID_NURSE_EXCEL의 details.errors 한 줄. 한 행이라도 있으면 전체 등록이 취소된다.
+// 행 등록 단계에서 막히면 field는 "행", 이유는 message에 온다.
+export type ApiNurseImportRowError = { row: number; field: string; reason: string; message?: string };
+
 // NUR-02 쿼리
 export type NurseListQuery = {
   q?: string;

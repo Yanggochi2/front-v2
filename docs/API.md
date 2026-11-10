@@ -50,6 +50,8 @@ HN = HEAD_NURSE, 구성원 = 병동 구성원. P2 = 2순위. (결정) = 명세�
 | ID | 요청 | 권한 | 입력 | 성공 |
 |---|---|---|---|---|
 | NUR-01 | POST /wards/me/nurses | HN | NurseCreate | 201 Nurse (409 NURSE_ALREADY_EXISTS) |
+| - (11/2, backend #88) | GET /wards/me/nurses/import-template.xlsx | HN | - | 200 엑셀 등록 양식 |
+| - (11/2, backend #88) | POST /wards/me/nurses/import.xlsx | HN | multipart `file` | 201 {createdCount, nurses} (422 INVALID_NURSE_EXCEL, details.errors[{row, field, reason}] — 한 행이라도 틀리면 전체 취소) |
 | NUR-02 | GET /wards/me/nurses | 구성원 | q, role, dutyRole, status, includeRetired, sort, page, size | 200 Nurse[]+meta, 역할별 필드 차등 |
 | NUR-03 | GET /wards/me/nurses/{nurseId} | 구성원 | - | 200 Nurse, 역할별 필드 차등 |
 | NUR-04 | PATCH /wards/me/nurses/{nurseId} | HN | NursePatch(role 제외) | 200 Nurse+Violation[] (409 VERSION_CONFLICT) |

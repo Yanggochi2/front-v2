@@ -1,7 +1,8 @@
-import { apiRequest, apiRequestList } from "@/lib/apiClient";
+import { apiRequest, apiRequestBlob, apiRequestList } from "@/lib/apiClient";
 import type { DutyRole, Nurse, NurseDetail, NurseListResult, NurseStatus } from "@/types/nurses.type";
 import type {
   ApiNurse,
+  ApiNurseImportResult,
   ApiNurseMutationResult,
   NurseCreate,
   NurseListQuery,
@@ -85,6 +86,19 @@ export async function createNurse(body: NurseCreate): Promise<Nurse> {
     idempotencyKey: idempotencyKey(),
   });
   return mapNurse(data);
+}
+
+// 엑셀 일괄 등록 양식 (.xlsx)
+export function downloadNurseImportTemplate(): Promise<Blob> {
+  return apiRequestBlob(`${NURSES_PATH}/import-template.xlsx`);
+}
+
+// 엑셀 일괄 등록. 한 행이라도 잘못되면 422 INVALID_NURSE_EXCEL로 아무도 등록되지 않는다 (details.errors에 행별 오류).
+export async function importNursesXlsx(file: File): Promise<number> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const data = await apiRequest<ApiNurseImportResult>(`${NURSES_PATH}/import.xlsx`, { method: "POST", formData });
+  return data.createdCount;
 }
 
 // NUR-04. role은 보내지 않는다. 응답은 { nurse, violations, warnings }. TODO: violations·warnings 표시는 화면 시안 확정 후

@@ -13,6 +13,7 @@ export type ApiErrorBody = {
   message: string;
   traceId?: string;
   fieldErrors?: ApiFieldError[];
+  details?: Record<string, unknown>; // 코드별 추가 정보 (예: INVALID_NURSE_EXCEL의 행별 오류)
 };
 
 export type ApiResult<T> = { data: T };
