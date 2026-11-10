@@ -14,6 +14,7 @@ type Props = {
   painting?: boolean; // 칸 바꾸기(브러시)를 고른 상태. 누르면 바로 바뀌는 칸임을 커서로 알린다
   onCellClick?: (row: number, col: number, el: HTMLElement) => void; // 없으면 보기 전용
   onScroll: () => void;
+  checkColumn?: boolean; // 주간 오른쪽의 "확인 필요" 열. 확인할 일이 없는 공유 화면은 false
 };
 
 const DAY_TEXT = { default: "text-ink", sat: "text-brand", sun: "text-danger", holiday: "text-danger" } as const;
@@ -59,7 +60,7 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
   return starts;
 }
 
-export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll }: Props) {
+export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll, checkColumn = true }: Props) {
   const isMonth = view === "month";
   const nameW = isMonth ? "w-[112px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
@@ -116,9 +117,9 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
               <th scope="col" className={`sticky top-0 right-0 z-30 w-[72px] border-b border-line bg-canvas text-[16px] font-bold text-ink-sub ${headH}`}>
                 {showRemaining ? "남은 OFF" : "OFF 수"}
               </th>
-            ) : (
+            ) : checkColumn ? (
               <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />
-            )}
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -210,11 +211,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                   <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
                     <OffCount row={row} />
                   </td>
-                ) : (
+                ) : checkColumn ? (
                   <td className={`pl-4 ${rowH}`}>
                     {row.needsCheck ? <ScheduleChip tone="danger" shape="square">확인 필요</ScheduleChip> : null}
                   </td>
-                )}
+                ) : null}
               </tr>
             );
           })}

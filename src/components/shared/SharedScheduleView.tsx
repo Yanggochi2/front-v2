@@ -84,6 +84,7 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
             coverage={null}
             selected={null}
             onScroll={noop}
+            checkColumn={false}
           />
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
