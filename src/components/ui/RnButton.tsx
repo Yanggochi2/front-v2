@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { BUTTON_BASE, BUTTON_TONE } from "./buttonStyles";
 
 type Props = {
-  variant: "primary" | "secondary";
+  variant: "primary" | "secondary" | "danger";
   size?: "md" | "lg";
   href?: string;
   type?: "button" | "submit";

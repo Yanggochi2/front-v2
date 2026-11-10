@@ -54,6 +54,7 @@ HN = HEAD_NURSE, 구성원 = 병동 구성원. P2 = 2순위. (결정) = 명세�
 | NUR-03 | GET /wards/me/nurses/{nurseId} | 구성원 | - | 200 Nurse, 역할별 필드 차등 |
 | NUR-04 | PATCH /wards/me/nurses/{nurseId} | HN | NursePatch(role 제외) | 200 Nurse+Violation[] (409 VERSION_CONFLICT) |
 | NUR-05 | POST /wards/me/nurses/{nurseId}/retire | HN | affiliationEnd | 200 Nurse+Violation[] (409 LAST_HEAD_NURSE, 422 INVALID_END_DATE) |
+| - (11/2, backend #88) | DELETE /wards/me/nurses/{nurseId} | HN | - | 204. 내부적으로 오늘 날짜 퇴사 처리, 지난·확정 근무표는 유지 |
 
 ### 규칙
 | ID | 요청 | 권한 | 입력 | 성공 |
