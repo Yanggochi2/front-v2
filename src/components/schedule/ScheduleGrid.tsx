@@ -61,7 +61,7 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
 
 export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll }: Props) {
   const isMonth = view === "month";
-  const nameW = isMonth ? "w-[112px]" : "w-[151px]";
+  const nameW = isMonth ? "w-[152px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
   // 남는 높이는 표가 영역 높이까지(행당 MAX_ROW_PX 이하로) 행에 나눠 준다. 주간은 넉넉한 높이로 두고 넘치면 안에서 스크롤한다.
   const rowH = isMonth ? (coverage ? "h-[27px] print:h-6" : "h-7 print:h-6") + " [@media(max-height:820px)]:h-[21px]" : "h-10";
@@ -83,9 +83,17 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
           <tr>
             <th
               scope="col"
-              className={`sticky top-0 left-0 z-30 border-r border-b border-line bg-canvas pl-4 text-left text-[17px] font-bold text-ink-sub ${nameW} ${headH} ${isMonth ? "text-center pl-0" : ""}`}
+              className={`sticky top-0 left-0 z-30 border-r border-b border-line bg-canvas pl-4 text-left text-[17px] font-bold text-ink-sub ${nameW} ${headH} ${isMonth ? "pr-3" : ""}`}
             >
-              이름
+              {isMonth ? (
+                // OFF 수는 이름 칸 오른쪽 빈 자리에 둔다
+                <span className="flex items-center justify-between gap-1">
+                  이름
+                  <span className="text-[13px] font-medium">{showRemaining ? "남은 OFF" : "OFF 수"}</span>
+                </span>
+              ) : (
+                "이름"
+              )}
             </th>
             {days.map((d, i) => (
               <th
@@ -112,13 +120,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                 </div>
               </th>
             ))}
-            {isMonth ? (
-              <th scope="col" className={`sticky top-0 right-0 z-30 w-[72px] border-b border-line bg-canvas text-[16px] font-bold text-ink-sub ${headH}`}>
-                {showRemaining ? "남은 OFF" : "OFF 수"}
-              </th>
-            ) : (
-              <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />
-            )}
+            {isMonth ? null : <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />}
           </tr>
         </thead>
         <tbody>
@@ -137,7 +139,16 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       {start.name} · {start.count}명
                     </span>
                   ) : null}
-                  {row.name}
+                  {isMonth ? (
+                    <span className="flex items-center justify-between gap-1 pr-3">
+                      <span title={row.name} className="min-w-0 truncate">{row.name}</span>
+                      <span className="shrink-0 rounded-[8px] bg-surface px-1.5 py-[3px] text-center text-[16px] leading-none font-bold text-ink-sub [@media(max-height:820px)]:text-[14px]">
+                        <OffCount row={row} />
+                      </span>
+                    </span>
+                  ) : (
+                    row.name
+                  )}
                 </th>
                 {row.cells.map((cell, col) => {
                   const isSelected = selected?.row === index && selected.col === col;
@@ -206,11 +217,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                     </td>
                   );
                 })}
-                {isMonth ? (
-                  <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
-                    <OffCount row={row} />
-                  </td>
-                ) : (
+                {isMonth ? null : (
                   <td className={`pl-4 ${rowH}`}>
                     {row.needsCheck ? <ScheduleChip tone="danger" shape="square">확인 필요</ScheduleChip> : null}
                   </td>
@@ -264,7 +271,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       </td>
                     );
                   })}
-                  <td className={`sticky border-b border-line bg-white ${isMonth ? "right-0 z-20" : ""} ${rowCls}`} />
+                  {isMonth ? null : <td className={`border-b border-line bg-white ${rowCls}`} />}
                 </tr>
               );
             })}
