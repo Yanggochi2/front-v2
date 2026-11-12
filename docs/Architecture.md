@@ -40,6 +40,7 @@ src/
 - 사이드바 240px 고정, 본문은 `max-w-*`로 가운데 정렬. 표·시트는 자기 컨테이너 안에서 가로 스크롤하고 첫 열은 sticky.
 - 모바일/태블릿은 지원하지 않으므로 `sm:`, `md:`, `lg:` 같은 반응형 접두사를 쓰지 않는다.
 - 앱 화면((app), (onboarding))은 `.ui-zoom`으로 80% 비율을 쓴다. 랜딩(/)에는 적용하지 않는다.
+- 화면 모드(라이트/다크)는 병동 설정의 "화면 모드"에서 고른다. 선택은 `localStorage`(`ottugi.theme`)에만 두고, `app/layout.tsx`의 `<head>` 스크립트가 첫 그림 전에 `<html data-theme>`을 걸어 깜빡임을 막는다. 색 토큰과 규칙은 `docs/design-system.md`.
 
 ## 랜딩
 - `src/app/(marketing)/page.tsx` + `src/components/landing/*`. 문구·예시는 `src/constants/landing.constants.ts`.

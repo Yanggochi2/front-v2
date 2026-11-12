@@ -105,7 +105,7 @@ export default function ScheduleToolbar({
               className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                 active
                   ? `${BRUSH_BG[code]} shadow-[0_2px_8px_rgb(25_31_40/0.12)] ring-2 ${BRUSH_RING[code]}`
-                  : "border border-line bg-white text-ink-sub hover:border-grid hover:text-ink"
+                  : "border border-line bg-card text-ink-sub hover:border-grid hover:text-ink"
               }`}
             >
               {/* 근무 색 견본: 시트 칸과 같은 색이라 눌러 둔 근무를 바로 알아본다 */}
@@ -125,7 +125,7 @@ export default function ScheduleToolbar({
           disabled={!canUndo}
           title="Ctrl+Z"
           aria-label="되돌리기"
-          className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-card hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           <HistoryIcon />
           <span className="hidden min-[1440px]:inline">되돌리기</span>
@@ -136,7 +136,7 @@ export default function ScheduleToolbar({
           disabled={!canRedo}
           title="Ctrl+Y"
           aria-label="다시 실행"
-          className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-white hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-11 items-center gap-1.5 rounded-[12px] px-3 text-[16px] font-medium text-ink-sub transition-colors hover:bg-card hover:text-ink disabled:pointer-events-none disabled:opacity-40"
         >
           <HistoryIcon redo />
           <span className="hidden min-[1440px]:inline">다시 실행</span>

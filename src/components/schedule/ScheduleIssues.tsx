@@ -62,7 +62,7 @@ export default function ScheduleIssues({ issues, names, onPick }: Props) {
         <div
           role="dialog"
           aria-label="규칙 위반 목록"
-          className="absolute top-full right-0 z-40 mt-2 flex w-[500px] flex-col overflow-hidden rounded-[22px] border border-line bg-white shadow-pop"
+          className="absolute top-full right-0 z-40 mt-2 flex w-[500px] flex-col overflow-hidden rounded-[22px] border border-line bg-card shadow-pop"
         >
           <div className="border-b border-line px-5 pt-4 pb-3">
             <p className="text-[18px] font-bold text-ink">규칙 위반 {issues.length}건</p>

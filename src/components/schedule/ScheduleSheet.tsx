@@ -47,7 +47,7 @@ const BRUSH_HINT: Record<EditableDutyCode, string> = {
 };
 
 const NAV_BTN =
-  "flex size-11 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden";
+  "flex size-11 items-center justify-center rounded-full border border-line bg-card text-[22px] font-bold text-ink-sub shadow-[0_1px_2px_rgb(25_31_40/0.05)] transition-colors hover:border-grid hover:bg-canvas hover:text-ink print:hidden";
 
 // 제목 옆 근무표 상태 표시 (수간호사 화면)
 const STATUS_CHIP: Record<ScheduleStatus, { label: string; tone: "gray" | "brand" }> = {
@@ -234,7 +234,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
       {/* 24인치(1920×1080) 브라우저 창에서 월간 근무표가 스크롤 없이 한 화면에 들어오도록 머리 2줄 + 시트 + 범례 1줄로 둔다.
           인쇄는 A4 가로 한 장에 30명·하단 인원 행·범례가 함께 들어가도록 86%로 줄인다. */}
       <div className="flex min-h-0 w-full flex-1 flex-col print:[zoom:0.86]">
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-white px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-card px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
           {/* 1줄: 기간 이동 · 상태 · 보기 전환 / 공유 · 확정 */}
           <div className="flex min-h-12 flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex items-center gap-1.5">
@@ -320,7 +320,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               </p>
             ) : null}
             {showEmptyGuide ? (
-              <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[24px] border border-line bg-white p-6 text-center shadow-pop">
+              <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[24px] border border-line bg-card p-6 text-center shadow-pop">
                 <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
                 <p className="text-[22px] font-bold text-ink">아직 비어 있어요</p>
                 <p className="text-[16px] font-medium text-ink-sub">

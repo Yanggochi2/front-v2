@@ -14,7 +14,7 @@ const career = (n: Nurse) =>
 
 export default function NursesTable({ items }: { items: Nurse[] }) {
   return (
-    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-white shadow-card">
+    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-card shadow-card">
       <table className="w-full min-w-[960px] border-collapse">
         <thead>
           <tr className="border-b border-line bg-canvas">
@@ -35,8 +35,8 @@ export default function NursesTable({ items }: { items: Nurse[] }) {
           {items.map((n) => {
             const showDuty = n.dutyRole && !(n.role === "HEAD_NURSE" && n.dutyRole === "GENERAL");
             return (
-              <tr key={n.id} className="group border-b border-line/70 bg-white transition-colors last:border-b-0 hover:bg-canvas">
-                <th scope="row" className={`${cell} sticky left-0 z-10 w-[240px] bg-white text-[19px] font-bold text-ink transition-colors group-hover:bg-canvas`}>
+              <tr key={n.id} className="group border-b border-line/70 bg-card transition-colors last:border-b-0 hover:bg-canvas">
+                <th scope="row" className={`${cell} sticky left-0 z-10 w-[240px] bg-card text-[19px] font-bold text-ink transition-colors group-hover:bg-canvas`}>
                   <span className="flex items-center gap-3">
                     <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[17px] font-bold text-primary">
                       {n.name.slice(0, 1)}

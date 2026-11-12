@@ -23,7 +23,7 @@ export default function ScheduleSegmented<T extends string>({
       {options.map((o) => {
         const active = o.value === value;
         const cls = `flex h-11 items-center justify-center rounded-[12px] text-[16px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-primary ${itemClassName} ${
-          active ? "bg-white font-bold text-primary shadow-[0_1px_3px_rgb(25_31_40/0.12)]" : "font-medium text-ink-sub hover:text-ink"
+          active ? "bg-card font-bold text-primary shadow-[0_1px_3px_rgb(25_31_40/0.12)]" : "font-medium text-ink-sub hover:text-ink"
         }`;
         return o.href ? (
           <Link key={o.value} href={o.href} aria-current={active ? "true" : undefined} className={cls}>

@@ -5,9 +5,9 @@ import type { GenerationProgress } from "@/types/schedule.type";
 import GenerateStopButton from "./GenerateStopButton";
 
 const STATUS = {
-  done: { label: "완료", tone: "gray", card: "border-line bg-white" },
+  done: { label: "완료", tone: "gray", card: "border-line bg-card" },
   active: { label: "진행 중", tone: "brand", card: "border-primary bg-primary-soft ring-4 ring-primary-soft/60" },
-  pending: { label: "대기", tone: "gray", card: "border-line bg-white" },
+  pending: { label: "대기", tone: "gray", card: "border-line bg-card" },
 } as const;
 
 export default function GenerateProgress({ data }: { data: GenerationProgress }) {
@@ -41,7 +41,7 @@ export default function GenerateProgress({ data }: { data: GenerationProgress })
       </ol>
       <dl className="grid w-full grid-cols-3 gap-6">
         {data.metrics.map((m) => (
-          <div key={m.label} className="flex flex-col gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+          <div key={m.label} className="flex flex-col gap-2.5 rounded-[24px] border border-line bg-card shadow-card px-7 py-[26px]">
             <dt className="text-[16px] font-medium text-ink-sub">{m.label}</dt>
             <dd className={`text-[40px] leading-normal font-bold tracking-[-0.02em] ${m.tone === "danger" ? "text-danger" : "text-ink"}`}>{m.value}</dd>
           </div>

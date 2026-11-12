@@ -28,7 +28,7 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
           <ScheduleShareButtons scheduleId="" yearMonth={data.yearMonth} canExport={false} />
         </div>
       </header>
-      <section className="flex min-h-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-white px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
+      <section className="flex min-h-0 flex-1 flex-col gap-2.5 rounded-[24px] border border-line bg-card px-5 pt-3.5 pb-3 shadow-card print:border-0 print:p-0 print:shadow-none">
         <div className="relative min-h-0 flex-1 print:flex-none">
           <ScheduleGrid
             view="month"

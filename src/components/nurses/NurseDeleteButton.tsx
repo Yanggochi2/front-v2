@@ -41,7 +41,7 @@ function NurseDeleteDialog({ id, name, onClose }: { id: string; name: string; on
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
       <div
         ref={dialogRef}
         tabIndex={-1}
@@ -49,7 +49,7 @@ function NurseDeleteDialog({ id, name, onClose }: { id: string; name: string; on
         aria-modal="true"
         aria-labelledby="nurse-delete-title"
         aria-describedby="nurse-delete-desc"
-        className="flex w-[520px] flex-col gap-5 whitespace-normal rounded-[28px] bg-white p-8 text-left shadow-pop outline-none"
+        className="flex w-[520px] flex-col gap-5 whitespace-normal rounded-[28px] bg-card p-8 text-left shadow-pop outline-none"
       >
         <h2 id="nurse-delete-title" className="text-[26px] font-bold text-ink">
           {name} 간호사를 삭제할까요?

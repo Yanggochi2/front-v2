@@ -92,14 +92,14 @@ function NurseImportDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
       <div
         ref={dialogRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="nurse-import-title"
-        className="flex max-h-[90vh] w-[600px] flex-col gap-6 overflow-y-auto rounded-[28px] bg-white p-8 shadow-pop outline-none"
+        className="flex max-h-[90vh] w-[600px] flex-col gap-6 overflow-y-auto rounded-[28px] bg-card p-8 shadow-pop outline-none"
       >
         <h2 id="nurse-import-title" className="text-[26px] font-bold text-ink">
           엑셀로 한꺼번에 등록
@@ -140,7 +140,7 @@ function NurseImportDialog({ onClose }: { onClose: () => void }) {
                     setFile(e.target.files?.[0] ?? null);
                     setError(null);
                   }}
-                  className="text-[16px] text-ink file:mr-3 file:h-12 file:cursor-pointer file:rounded-[14px] file:border file:border-line file:bg-white file:px-5 file:font-bold file:text-ink-sub hover:file:bg-canvas"
+                  className="text-[16px] text-ink file:mr-3 file:h-12 file:cursor-pointer file:rounded-[14px] file:border file:border-line file:bg-card file:px-5 file:font-bold file:text-ink-sub hover:file:bg-canvas"
                 />
               </li>
             </ol>

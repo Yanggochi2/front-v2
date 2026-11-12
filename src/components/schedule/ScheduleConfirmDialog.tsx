@@ -38,12 +38,12 @@ export default function ScheduleConfirmDialog({
   }, [busy, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="schedule-confirm-title"
-        className="flex w-[480px] flex-col gap-4 rounded-[28px] bg-white p-8 shadow-pop"
+        className="flex w-[480px] flex-col gap-4 rounded-[28px] bg-card p-8 shadow-pop"
       >
         <h2 id="schedule-confirm-title" className="text-[24px] font-bold text-ink">
           {title}

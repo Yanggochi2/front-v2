@@ -57,8 +57,8 @@ export default function ScheduleShareLink({ scheduleId, shareable }: { scheduleI
         공유 링크
       </ScheduleButton>
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
-          <div role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="flex w-[560px] flex-col gap-4 rounded-[28px] bg-white p-8 shadow-pop">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
+          <div role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="flex w-[560px] flex-col gap-4 rounded-[28px] bg-card p-8 shadow-pop">
             <h2 id="share-link-title" className="text-[24px] font-bold text-ink">
               간호사들에게 보여 줄 공유 링크
             </h2>

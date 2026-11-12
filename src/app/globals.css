@@ -1,9 +1,29 @@
 @import "tailwindcss";
 
-/* 색상 값은 Figma "이석찬" 파일의 라이트 화면에서 가져왔다. */
+/* 글꼴과 랜딩 전용 값. 앱 화면 색은 아래 `@theme`(다크 모드에서 값이 바뀐다)에 둔다. */
 @theme inline {
   --font-sans: var(--font-noto-sans-kr), system-ui, sans-serif;
 
+  /* 랜딩(/) 전용. 값은 랜딩 시안(아티팩트) 기준 */
+  --font-display: var(--font-black-han-sans), var(--font-noto-sans-kr), system-ui, sans-serif;
+  --color-landing-ink: #12060b;
+  --color-landing-brand: #7a1f3d;
+  --color-landing-brand-hi: #b8325f;
+  --color-landing-blush: #f0a9bd;
+  --color-landing-frost: #fff1f5;
+  --color-landing-mist: #d6bcc6;
+  --color-landing-line: rgb(255 190 210 / 0.2);
+  --color-landing-panel: rgb(34 12 22 / 0.72);
+  --color-landing-d: #ffc94d;
+  --color-landing-e: #ff8a5b;
+  --color-landing-n: #9a8cff;
+  --color-landing-o: #b7a3ab;
+  --animate-landing-rise: landing-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* 색상 값은 Figma "이석찬" 파일에서 가져왔다. 라이트는 라이트 화면, 다크는 `· 다크` 화면 값.
+   `inline`을 쓰지 않아 utility가 `var(--color-…)`를 참조하므로, 다크 모드는 아래 `data-theme="dark"` 블록에서 변수만 바꾼다. */
+@theme {
   --color-ink: #191f28;
   --color-ink-sub: #4e5968;
   --color-ink-mute: #6b7684;
@@ -24,6 +44,11 @@
   /* 메인 버건디의 눌림·hover 색과 앱 바탕색. 팔레트 밖의 새 색이 아니라 같은 계열의 명도만 바꾼 값 */
   --color-primary-strong: #8e4357;
   --color-canvas: #f6f7f9;
+  /* 카드·떠 있는 창·사이드바 같은 위에 올라오는 면. 라이트는 흰색 */
+  --color-card: #ffffff;
+  /* 창 뒤 가림막, 그리고 ink 바탕 위의 글자색 (다크에서는 ink가 밝아져서 같이 뒤집는다) */
+  --color-scrim: rgb(25 31 40 / 0.4);
+  --color-ink-inverse: #ffffff;
 
   /* 카드·떠 있는 창·주요 버튼 그림자 */
   --shadow-card: 0 1px 2px rgb(25 31 40 / 0.04), 0 6px 20px -8px rgb(25 31 40 / 0.08);
@@ -53,22 +78,53 @@
   --color-duty-e-solid: #d9501f;
   --color-duty-n-solid: #4f46e5;
   --color-duty-al-solid: #1e7a4c;
+}
 
-  /* 랜딩(/) 전용. 값은 랜딩 시안(아티팩트) 기준 */
-  --font-display: var(--font-black-han-sans), var(--font-noto-sans-kr), system-ui, sans-serif;
-  --color-landing-ink: #12060b;
-  --color-landing-brand: #7a1f3d;
-  --color-landing-brand-hi: #b8325f;
-  --color-landing-blush: #f0a9bd;
-  --color-landing-frost: #fff1f5;
-  --color-landing-mist: #d6bcc6;
-  --color-landing-line: rgb(255 190 210 / 0.2);
-  --color-landing-panel: rgb(34 12 22 / 0.72);
-  --color-landing-d: #ffc94d;
-  --color-landing-e: #ff8a5b;
-  --color-landing-n: #9a8cff;
-  --color-landing-o: #b7a3ab;
-  --animate-landing-rise: landing-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+/* 다크 모드: `<html data-theme="dark">`(병동 설정의 "화면 모드"). 인쇄는 항상 라이트라 screen에서만 적용한다.
+   값은 Figma 다크 화면(`· 다크`)의 같은 자리 색. 근무 칸의 진한 배경(`--color-duty-*-solid`)은 현재 디자인 그대로 둔다. */
+@media screen {
+  html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-ink: #f2f4f6;
+    --color-ink-sub: #b0b8c1;
+    --color-ink-mute: #8b95a1;
+    /* TODO: Figma 다크 화면에 쓰인 곳이 없어 ink-mute 한 단계 아래로 정한 값 */
+    --color-ink-faint: #6b7684;
+
+    --color-line: #33333d;
+    --color-grid: #121216;
+    --color-surface: #2c2c35;
+    --color-sidebar: #1c1c22;
+
+    --color-brand: #4593fc;
+    --color-brand-soft: #1d2b44;
+    --color-danger-soft: #3a2024;
+    --color-primary-soft: #3a2430;
+    --color-canvas: #17171c;
+    --color-card: #202027;
+    --color-scrim: rgb(0 0 0 / 0.6);
+    --color-ink-inverse: #17171c;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -8px rgb(0 0 0 / 0.5);
+    --shadow-pop: 0 2px 6px rgb(0 0 0 / 0.4), 0 24px 48px -12px rgb(0 0 0 / 0.6);
+    --shadow-cta: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 20px -8px rgb(166 84 104 / 0.55);
+
+    --color-ok: #4cd08a;
+    --color-ok-soft: #1d3a2b;
+
+    --color-duty-d: #3a3220;
+    --color-duty-d-ink: #f5c542;
+    --color-duty-e: #3a2a22;
+    --color-duty-e-ink: #ff9f73;
+    --color-duty-n: #28294a;
+    --color-duty-n-ink: #a5a8ff;
+    --color-duty-off: #2c2c35;
+    --color-duty-off-ink: #b0b8c1;
+    --color-duty-off-edge: #6b7684;
+    --color-duty-al: #1d3a2b;
+    --color-duty-al-ink: #4cd08a;
+  }
 }
 
 @keyframes landing-rise {
@@ -180,7 +236,7 @@ html:has(.landing-root) {
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-card);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }

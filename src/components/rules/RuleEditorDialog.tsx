@@ -77,12 +77,12 @@ export default function RuleEditorDialog({ rule, onSaved, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="rule-editor-title"
-        className="flex w-[640px] flex-col gap-6 rounded-[28px] bg-white p-8 shadow-pop"
+        className="flex w-[640px] flex-col gap-6 rounded-[28px] bg-card p-8 shadow-pop"
       >
         <h2 id="rule-editor-title" className="text-[26px] font-bold text-ink">
           {editing ? `${rule.name} 수정` : "규칙 추가"}
@@ -115,7 +115,7 @@ export default function RuleEditorDialog({ rule, onSaved, onClose }: Props) {
                       value={Number.isNaN(params[p.key]) ? "" : params[p.key]}
                       onChange={(e) => setParams((prev) => ({ ...prev, [p.key]: e.target.valueAsNumber }))}
                       aria-label={`${p.unit} 값`}
-                      className="h-12 w-20 rounded-[12px] border-2 border-primary bg-white px-3 text-center text-[20px] font-bold text-primary"
+                      className="h-12 w-20 rounded-[12px] border-2 border-primary bg-card px-3 text-center text-[20px] font-bold text-primary"
                     />
                     <span>{p.unit}</span>
                   </span>

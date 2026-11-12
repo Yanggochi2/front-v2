@@ -21,7 +21,7 @@ const WEEKDAY_TEXT = { default: "text-ink-sub", sat: "text-brand", sun: "text-da
 // 토·일·공휴일 열을 본문에서도 구분하도록 머리글과 근무가 없는 칸에 옅은 배경을 깐다.
 // 빈 칸은 근무 색(N 연보라·E 연주황)과 헷갈리지 않게 30%로 아주 옅게. 하단 인원 행은 인원 칩이 잘 보이도록 흰색 그대로.
 const HEAD_BG = { default: "bg-canvas", sat: "bg-brand-soft", sun: "bg-danger-soft", holiday: "bg-danger-soft" } as const;
-const EMPTY_BG = { default: "bg-white", sat: "bg-brand-soft/30", sun: "bg-danger-soft/30", holiday: "bg-danger-soft/30" } as const;
+const EMPTY_BG = { default: "bg-card", sat: "bg-brand-soft/30", sun: "bg-danger-soft/30", holiday: "bg-danger-soft/30" } as const;
 
 // 표가 영역 높이에 맞춰 행을 늘릴 때 한 행이 커질 수 있는 최대 높이(px). 이름 머리·인원 행 높이와 함께
 // 표 높이를 정해, "확인 필요한 칸만 보기"처럼 행이 적을 때 몇 줄이 화면 가득 늘어나지 않게 한다.
@@ -117,7 +117,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                 {showRemaining ? "남은 OFF" : "OFF 수"}
               </th>
             ) : (
-              <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />
+              <th scope="col" className="w-[112px] border-b border-transparent bg-card" aria-label="확인 필요" />
             )}
           </tr>
         </thead>
@@ -129,7 +129,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
               <tr key={row.nurseKey} className="group">
                 <th
                   scope="row"
-                  className={`sticky left-0 z-10 border-r border-b border-line bg-white text-left leading-tight text-[20px] font-bold text-ink transition-colors group-hover:bg-primary-soft ${isMonth ? "[@media(max-height:820px)]:text-[17px] [@media(max-height:820px)]:leading-none" : ""} ${nameW} ${rowH} ${groupTop} pl-4`}
+                  className={`sticky left-0 z-10 border-r border-b border-line bg-card text-left leading-tight text-[20px] font-bold text-ink transition-colors group-hover:bg-primary-soft ${isMonth ? "[@media(max-height:820px)]:text-[17px] [@media(max-height:820px)]:leading-none" : ""} ${nameW} ${rowH} ${groupTop} pl-4`}
                 >
                   {start ? (
                     // 낮은 화면의 월간은 행 높이가 모자라 그룹 이름을 숨기고 굵은 윗선으로만 구분한다
@@ -207,7 +207,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                   );
                 })}
                 {isMonth ? (
-                  <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
+                  <td className={`sticky right-0 z-10 border-b border-line bg-card text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
                     <OffCount row={row} />
                   </td>
                 ) : (
@@ -242,7 +242,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                         key={days[i].date}
                         title={count ? `${duty} ${count.actual}명 / 필요 ${count.required}명` : undefined}
                         className={`sticky z-10 border-r border-b border-line text-center transition-colors ${rowCls} ${
-                          spotCol === i ? "bg-danger-soft" : days[i].isToday ? "bg-primary-soft" : "bg-white"
+                          spotCol === i ? "bg-danger-soft" : days[i].isToday ? "bg-primary-soft" : "bg-card"
                         }`}
                       >
                         {!count ? (
@@ -264,7 +264,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       </td>
                     );
                   })}
-                  <td className={`sticky border-b border-line bg-white ${isMonth ? "right-0 z-20" : ""} ${rowCls}`} />
+                  <td className={`sticky border-b border-line bg-card ${isMonth ? "right-0 z-20" : ""} ${rowCls}`} />
                 </tr>
               );
             })}

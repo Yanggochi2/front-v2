@@ -44,7 +44,7 @@ export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose:
   const nav = useNavModel();
 
   return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-white px-4 pt-6 pb-5">
+    <aside className="flex h-full w-[240px] shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-line bg-card px-4 pt-6 pb-5">
       <div className="flex items-center justify-between pb-2">
         <Link href="/schedule" aria-label="홈으로" className="flex items-center gap-2.5">
           <span
@@ -100,7 +100,7 @@ function SidebarAccount({ userName }: { userName: string }) {
         type="button"
         onClick={run}
         disabled={loading}
-        className="h-10 w-full rounded-[12px] border border-line bg-white text-[16px] font-bold text-ink-sub transition-colors hover:border-grid hover:text-ink disabled:opacity-50"
+        className="h-10 w-full rounded-[12px] border border-line bg-card text-[16px] font-bold text-ink-sub transition-colors hover:border-grid hover:text-ink disabled:opacity-50"
       >
         {loading ? "로그아웃하는 중…" : "로그아웃"}
       </button>

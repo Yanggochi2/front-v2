@@ -22,14 +22,14 @@ export default function NurseRegisteredDialog({ name, onAddAnother }: Props) {
   }, [onAddAnother]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim backdrop-blur-[2px]">
       <div
         ref={dialogRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="nurse-registered-title"
-        className="flex w-[520px] flex-col outline-none gap-5 rounded-[28px] bg-white p-8 shadow-pop"
+        className="flex w-[520px] flex-col outline-none gap-5 rounded-[28px] bg-card p-8 shadow-pop"
       >
         <h2 id="nurse-registered-title" className="text-[26px] font-bold text-ink">
           {name} 간호사를 등록했어요

@@ -6,7 +6,7 @@ import type { ShellInfo } from "@/types/shell.type";
 // 사이드바를 닫았을 때의 상단 바. 메뉴 목록은 보이지 않고 사이드바를 다시 여는 버튼만 둔다.
 export default function TopNav({ shell, onOpen }: { shell: ShellInfo; onOpen: () => void }) {
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-6 border-b border-line bg-white px-6">
+    <header className="flex h-[72px] shrink-0 items-center gap-6 border-b border-line bg-card px-6">
       <button
         type="button"
         onClick={onOpen}

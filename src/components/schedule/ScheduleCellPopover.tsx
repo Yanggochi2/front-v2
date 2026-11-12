@@ -19,7 +19,7 @@ export default function ScheduleCellPopover({ top, left, above, title, current, 
       role="dialog"
       aria-label={`${title} 근무 바꾸기`}
       style={{ top, left }}
-      className={`fixed z-50 flex flex-col gap-3 rounded-[22px] border border-line bg-white p-4 shadow-pop ${above ? "-translate-y-full" : ""}`}
+      className={`fixed z-50 flex flex-col gap-3 rounded-[22px] border border-line bg-card p-4 shadow-pop ${above ? "-translate-y-full" : ""}`}
     >
       <div>
         <p className="text-[18px] font-bold text-ink">{title}</p>
@@ -44,12 +44,12 @@ export default function ScheduleCellPopover({ top, left, above, title, current, 
               aria-pressed={now}
               onClick={() => onPick(code)}
               className={`relative flex h-[52px] w-[66px] items-center justify-center rounded-[14px] border-2 ${DUTY_STYLE[code].cell} ${DUTY_STYLE[code].edge} text-[20px] transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-[0_4px_10px_rgb(25_31_40/0.12)] active:translate-y-0 ${
-                now ? "ring-2 ring-ink ring-offset-2" : ""
+                now ? "ring-2 ring-ink ring-offset-2 ring-offset-card" : ""
               }`}
             >
               {DUTY_STYLE[code].weekLabel}
               {now ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2 text-[13px] leading-[18px] font-bold whitespace-nowrap text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-2 text-[13px] leading-[18px] font-bold whitespace-nowrap text-ink-inverse">
                   지금
                 </span>
               ) : null}

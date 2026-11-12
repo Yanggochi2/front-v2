@@ -1,11 +1,12 @@
 import AdminButton from "@/components/ui/AdminButton";
 import type { ReactNode } from "react";
 import RequiredStaffSection from "./RequiredStaffSection";
+import ThemeSetting from "./ThemeSetting";
 import type { WardSettingsData } from "@/types/ward.type";
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex w-full flex-col items-start gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+    <section className="flex w-full flex-col items-start gap-2.5 rounded-[24px] border border-line bg-card shadow-card px-7 py-[26px]">
       <h2 className="flex items-center gap-2 text-[18px] leading-normal font-bold text-ink">
         <span aria-hidden className="size-2 rounded-full bg-primary" />
         {title}
@@ -41,6 +42,9 @@ export default function WardSettingsView({ ward }: { ward: WardSettingsData | nu
         ) : (
           <p className="text-[18px] leading-normal font-bold text-ink">-</p>
         )}
+      </Card>
+      <Card title="화면 모드">
+        <ThemeSetting />
       </Card>
     </>
   );

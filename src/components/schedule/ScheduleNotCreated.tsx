@@ -3,7 +3,7 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 // 그 달 근무표를 아직 만들지 않았을 때 (GET 근무표 404). 자동 생성 화면에서 그 달을 골라 만든다.
 export default function ScheduleNotCreated({ yearMonth }: { yearMonth: string }) {
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[24px] border border-line bg-white px-10 py-[60px] text-center">
+    <div className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[24px] border border-line bg-card px-10 py-[60px] text-center">
       <div className="flex size-[96px] items-center justify-center gap-1 rounded-full bg-primary-soft" aria-hidden>
         <span className="size-1.5 rounded-full bg-primary" />
         <span className="size-1.5 rounded-full bg-primary" />

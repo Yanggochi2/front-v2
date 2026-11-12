@@ -2,7 +2,7 @@ export function AdminErrorState({ message }: { message?: string }) {
   return (
     <section
       role="alert"
-      className="flex w-full flex-col items-center gap-3 rounded-[28px] border border-line bg-white px-10 py-[72px] shadow-card text-center"
+      className="flex w-full flex-col items-center gap-3 rounded-[28px] border border-line bg-card px-10 py-[72px] shadow-card text-center"
     >
       <p className="text-[26px] leading-normal font-bold text-ink">불러오지 못했어요</p>
       <p className="text-[18px] leading-normal font-medium text-ink-sub">

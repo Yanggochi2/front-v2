@@ -43,12 +43,12 @@ export default function GenerateStart({ yearMonth, draft, locked, offTarget }: P
         title="근무표 자동 생성"
         subtitle={`달을 고르고 시작하면 보통 ${GENERATE_ESTIMATED_MINUTES}분 안에 끝나요`}
       />
-      <section className="flex w-full flex-col items-start gap-6 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+      <section className="flex w-full flex-col items-start gap-6 rounded-[24px] border border-line bg-card shadow-card px-7 py-[26px]">
         <div className="flex items-center gap-3">
           <Link
             href={`/schedule/generate?ym=${shiftMonth(yearMonth, -1)}`}
             aria-label="이전 달"
-            className="flex size-12 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub transition-colors hover:border-grid hover:bg-canvas hover:text-ink"
+            className="flex size-12 items-center justify-center rounded-full border border-line bg-card text-[22px] font-bold text-ink-sub transition-colors hover:border-grid hover:bg-canvas hover:text-ink"
           >
             ‹
           </Link>
@@ -56,7 +56,7 @@ export default function GenerateStart({ yearMonth, draft, locked, offTarget }: P
           <Link
             href={`/schedule/generate?ym=${shiftMonth(yearMonth, 1)}`}
             aria-label="다음 달"
-            className="flex size-12 items-center justify-center rounded-full border border-line bg-white text-[22px] font-bold text-ink-sub transition-colors hover:border-grid hover:bg-canvas hover:text-ink"
+            className="flex size-12 items-center justify-center rounded-full border border-line bg-card text-[22px] font-bold text-ink-sub transition-colors hover:border-grid hover:bg-canvas hover:text-ink"
           >
             ›
           </Link>
@@ -98,14 +98,14 @@ export default function GenerateStart({ yearMonth, draft, locked, offTarget }: P
         </div>
       </section>
       {offTarget !== undefined ? (
-        <section className="flex w-full flex-col items-start gap-4 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+        <section className="flex w-full flex-col items-start gap-4 rounded-[24px] border border-line bg-card shadow-card px-7 py-[26px]">
           <h2 className="text-[20px] font-bold text-ink">{monthLabel(yearMonth)} OFF 목표</h2>
           <OffTargetCard key={yearMonth} yearMonth={yearMonth} initial={offTarget} locked={draft === null} />
         </section>
       ) : null}
       <ol className="grid w-full grid-cols-3 gap-6">
         {STEPS.map((s, i) => (
-          <li key={s.title} className="flex flex-col items-start gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
+          <li key={s.title} className="flex flex-col items-start gap-2.5 rounded-[24px] border border-line bg-card shadow-card px-7 py-[26px]">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary-soft text-[18px] font-bold text-primary">{i + 1}</span>
             <p className="text-[22px] font-bold text-ink">{s.title}</p>
             <p className="text-[16px] font-medium text-ink-sub">{s.description}</p>

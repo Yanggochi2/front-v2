@@ -9,7 +9,7 @@ export function AdminTableShell({
   children: ReactNode;
 }) {
   return (
-    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-white shadow-card">
+    <div className="w-full overflow-x-auto rounded-[20px] border border-line bg-card shadow-card">
       <table className={`w-full border-collapse ${minWidth}`}>{children}</table>
     </div>
   );
@@ -52,7 +52,7 @@ export function AdminTd({
   return (
     <td
       className={`h-[72px] pr-3 pl-5 text-[17px] whitespace-nowrap ${
-        first ? "sticky left-0 z-10 bg-white font-bold text-ink transition-colors group-hover:bg-canvas" : "font-medium text-ink-sub"
+        first ? "sticky left-0 z-10 bg-card font-bold text-ink transition-colors group-hover:bg-canvas" : "font-medium text-ink-sub"
       } ${className}`}
     >
       {children}
