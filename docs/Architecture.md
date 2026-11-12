@@ -14,7 +14,7 @@ src/
     (app)/             사이드바 있는 화면
     (onboarding)/      사이드바 없는 화면 (병동 만들기)
     (shared)/          로그인 없이 보는 공유 근무표 (/shared/[token])
-    (marketing)/       서비스 소개 랜딩 (/)
+    page.tsx           / 에서 /schedule로 보냄
   components/
     layout/            Sidebar 등 공통 레이아웃
     ui/                공용 UI (Button, Chip, DutyChip 등)
@@ -39,12 +39,7 @@ src/
 - **웹(데스크톱) 전용**이다. 반응형은 하지 않는다. 기준은 화면 캡처(1680px, 사이드바 열림).
 - 사이드바 240px 고정, 본문은 `max-w-*`로 가운데 정렬. 표·시트는 자기 컨테이너 안에서 가로 스크롤하고 첫 열은 sticky.
 - 모바일/태블릿은 지원하지 않으므로 `sm:`, `md:`, `lg:` 같은 반응형 접두사를 쓰지 않는다.
-- 앱 화면((app), (onboarding))은 `.ui-zoom`으로 80% 비율을 쓴다. 랜딩(/)에는 적용하지 않는다.
-
-## 랜딩
-- `src/app/(marketing)/page.tsx` + `src/components/landing/*`. 문구·예시는 `src/constants/landing.constants.ts`.
-- 3D 배경은 `three`(r128, 시안과 같은 버전)로 `LandingStage`(client)에서 그린다. WebGL이 없으면 배경 그라데이션만 남고, `prefers-reduced-motion`이면 움직임을 줄인다.
-- 색·폰트는 `globals.css`의 `landing-*` 토큰과 `@utility landing-*`를 쓴다 (앱 화면 토큰과 분리). 제목 폰트는 Black Han Sans.
+- 앱 화면((app), (onboarding))은 `.ui-zoom`으로 80% 비율을 쓴다.
 
 ## 디자인 토큰
 `src/app/globals.css`의 `@theme`에 모았다. 값은 Figma 라이트 화면 기준이며 `docs/design-system.md`와 다른 부분은 Figma를 따랐다.
