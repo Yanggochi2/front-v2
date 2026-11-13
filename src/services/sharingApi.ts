@@ -1,7 +1,8 @@
 import { apiRequest } from "@/lib/apiClient";
-import { monthDates, todayKst } from "@/lib/schedulePeriod";
-import { toDay } from "@/services/scheduleApi";
-import type { ScheduleDay, ScheduleRow } from "@/types/schedule.type";
+import { monthDates, resolvePeriod, todayKst, weekCountOf } from "@/lib/schedulePeriod";
+import { sheetTitle, toDay } from "@/services/scheduleApi";
+import type { ScheduleDay, ScheduleRow, ScheduleView } from "@/types/schedule.type";
+import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import type { ApiSharedSchedule, ApiSharedSort, ShareLink } from "@/types/sharingApi.type";
 
 const scheduleShare = (scheduleId: string) => `/wards/me/schedules/${encodeURIComponent(scheduleId)}/share-link`;
@@ -19,31 +20,45 @@ export function revokeShareLink(scheduleId: string): Promise<void> {
 
 export type SharedScheduleData = {
   yearMonth: string;
+  status: ScheduleStatus;
   title: string;
   sort: ApiSharedSort;
   /** 이름 검색어. 없으면 빈 문자열 */
   query: string;
+  view: ScheduleView;
+  activeWeek: number;
+  weekCount: number;
   days: ScheduleDay[];
   rows: ScheduleRow[];
 };
 
+export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string; q?: string };
+
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
-// q를 주면 이름에 검색어가 들어간 사람과 그 사람의 칸만 온다 (11/13 계약).
 // 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
-export async function getSharedSchedule(token: string, sort?: ApiSharedSort, q?: string): Promise<SharedScheduleData> {
+// q를 주면 이름에 검색어가 들어간 사람과 그 사람의 칸만 온다 (11/13 계약).
+// 보기를 고르지 않으면 서버 defaultView를 따른다. 주간은 수간호사 화면처럼 1일부터 7일씩 끊는다.
+export async function getSharedSchedule(token: string, query: SharedScheduleQuery = {}): Promise<SharedScheduleData> {
   const s = await apiRequest<ApiSharedSchedule>(`/shared/schedules/${encodeURIComponent(token)}`, {
-    query: { sort, q: q || undefined },
+    query: { sort: query.sort, q: query.q },
     anonymous: true,
   });
   const { yearMonth: nowYm, day } = todayKst();
   const today = `${nowYm}-${String(day).padStart(2, "0")}`;
-  const dates = monthDates(s.yearMonth);
+  const view = query.view ?? s.defaultView ?? "month";
+  const { week } = resolvePeriod(s.yearMonth, query.week);
+  const all = monthDates(s.yearMonth);
+  const dates = view === "month" ? all : all.slice((week - 1) * 7, week * 7);
   const cells = new Map(s.cells.map((c) => [`${c.nurseId}|${c.date}`, c.dutyCode]));
   return {
     yearMonth: s.yearMonth,
-    title: `${s.yearMonth.slice(0, 4)}년 ${Number(s.yearMonth.slice(5))}월 근무표`,
+    status: s.status,
+    title: sheetTitle(view, s.yearMonth, week, nowYm, day),
     sort: s.sort,
-    query: s.query ?? q ?? "",
+    query: s.query ?? query.q ?? "",
+    view,
+    activeWeek: week,
+    weekCount: weekCountOf(s.yearMonth),
     days: dates.map((d) => toDay(d, today, new Map())),
     // 서버가 정렬한 순서 그대로 둔다
     rows: s.nurses.map((n) => ({

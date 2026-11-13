@@ -14,6 +14,7 @@ type Props = {
   painting?: boolean; // 칸 바꾸기(브러시)를 고른 상태. 누르면 바로 바뀌는 칸임을 커서로 알린다
   onCellClick?: (row: number, col: number, el: HTMLElement) => void; // 없으면 보기 전용
   onScroll: () => void;
+  checkColumn?: boolean; // 주간 오른쪽의 "확인 필요" 열. 확인할 일이 없는 공유 화면은 false
 };
 
 const DAY_TEXT = { default: "text-ink", sat: "text-brand", sun: "text-danger", holiday: "text-danger" } as const;
@@ -59,9 +60,9 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
   return starts;
 }
 
-export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll }: Props) {
+export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll, checkColumn = true }: Props) {
   const isMonth = view === "month";
-  const nameW = isMonth ? "w-[112px]" : "w-[151px]";
+  const nameW = isMonth ? "w-[152px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
   // 남는 높이는 표가 영역 높이까지(행당 MAX_ROW_PX 이하로) 행에 나눠 준다. 주간은 넉넉한 높이로 두고 넘치면 안에서 스크롤한다.
   const rowH = isMonth ? (coverage ? "h-[27px] print:h-6" : "h-7 print:h-6") + " [@media(max-height:820px)]:h-[21px]" : "h-10";
@@ -73,6 +74,8 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
   const starts = groupStarts(rows);
   // 수간호사 화면은 남은 OFF(11/2 미팅), OFF 목표를 받지 않는 공유 화면은 그 달 OFF 수를 보인다
   const showRemaining = rows.some(({ row }) => row.offTarget !== undefined);
+  // 월간: 이름 옆에는 남은 OFF(목표가 있을 때만), 맨 오른쪽 고정 열에는 그 달 총 OFF 수
+  const remainingBeside = isMonth && showRemaining;
   const tableMaxPx = HEAD_PX + (coverage ? COVERAGE_ROWS.length * COVERAGE_ROW_PX[view] : 0) + rows.length * MAX_ROW_PX[view];
 
   return (
@@ -83,9 +86,17 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
           <tr>
             <th
               scope="col"
-              className={`sticky top-0 left-0 z-30 border-r border-b border-line bg-canvas pl-4 text-left text-[17px] font-bold text-ink-sub ${nameW} ${headH} ${isMonth ? "text-center pl-0" : ""}`}
+              className={`sticky top-0 left-0 z-30 border-r border-b border-line bg-canvas pl-4 text-left text-[17px] font-bold text-ink-sub ${nameW} ${headH} ${remainingBeside ? "pr-3" : ""}`}
             >
-              이름
+              {remainingBeside ? (
+                // 남은 OFF는 이름 칸 오른쪽 빈 자리에 둔다
+                <span className="flex items-center justify-between gap-1">
+                  이름
+                  <span className="text-[13px] font-medium">남은 OFF</span>
+                </span>
+              ) : (
+                "이름"
+              )}
             </th>
             {days.map((d, i) => (
               <th
@@ -114,11 +125,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
             ))}
             {isMonth ? (
               <th scope="col" className={`sticky top-0 right-0 z-30 w-[72px] border-b border-line bg-canvas text-[16px] font-bold text-ink-sub ${headH}`}>
-                {showRemaining ? "남은 OFF" : "OFF 수"}
+                총 OFF
               </th>
-            ) : (
+            ) : checkColumn ? (
               <th scope="col" className="w-[112px] border-b border-transparent bg-white" aria-label="확인 필요" />
-            )}
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -137,7 +148,16 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       {start.name} · {start.count}명
                     </span>
                   ) : null}
-                  {row.name}
+                  {remainingBeside ? (
+                    <span className="flex items-center justify-between gap-1 pr-3">
+                      <span title={row.name} className="min-w-0 truncate">{row.name}</span>
+                      <span className="shrink-0 rounded-[8px] bg-surface px-1.5 py-[3px] text-center text-[16px] leading-none font-bold text-ink-sub [@media(max-height:820px)]:text-[14px]">
+                        <RemainingOff row={row} />
+                      </span>
+                    </span>
+                  ) : (
+                    row.name
+                  )}
                 </th>
                 {row.cells.map((cell, col) => {
                   const isSelected = selected?.row === index && selected.col === col;
@@ -208,13 +228,13 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                 })}
                 {isMonth ? (
                   <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
-                    <OffCount row={row} />
+                    <TotalOff row={row} />
                   </td>
-                ) : (
+                ) : checkColumn ? (
                   <td className={`pl-4 ${rowH}`}>
                     {row.needsCheck ? <ScheduleChip tone="danger" shape="square">확인 필요</ScheduleChip> : null}
                   </td>
-                )}
+                ) : null}
               </tr>
             );
           })}
@@ -264,7 +284,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       </td>
                     );
                   })}
-                  <td className={`sticky border-b border-line bg-white ${isMonth ? "right-0 z-20" : ""} ${rowCls}`} />
+                  <td className={`border-b border-line bg-white ${isMonth ? "sticky right-0 z-20" : ""} ${rowCls}`} />
                 </tr>
               );
             })}
@@ -275,14 +295,28 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
   );
 }
 
-// 남은 OFF = max(OFF 목표 - 넣은 O, 0). 백엔드 statistics.remainingOff와 같은 식이지만,
+// 그 달에 넣은 OFF(O) 개수. 연차(AL)·교육(ED)은 O로 세지 않는다 (백엔드 remainingOff와 같은 기준).
 // 저장 전에 칸을 고쳐도 바로 바뀌도록 지금 칸으로 센다 (월간은 그 달 모든 날짜를 갖고 있다).
-function OffCount({ row }: { row: ScheduleRow }) {
-  const offs = row.cells.filter((c) => c.duty === "O").length;
+const countOffs = (row: ScheduleRow) => row.cells.filter((c) => c.duty === "O").length;
+
+// 남은 OFF = max(OFF 목표 - 넣은 O, 0). 백엔드 statistics.remainingOff와 같은 식이다. 이름 칸 옆에 둔다.
+function RemainingOff({ row }: { row: ScheduleRow }) {
+  const offs = countOffs(row);
   if (row.offTarget === undefined) return <>{offs}</>;
   return (
     <span title={`OFF ${offs}개 넣음 · 목표 ${row.offTarget}개`} className={offs > row.offTarget ? "text-danger" : ""}>
       {Math.max(row.offTarget - offs, 0)}
+    </span>
+  );
+}
+
+// 총 OFF = 그 달에 넣은 OFF 개수. 맨 오른쪽 고정 열에 둔다. 목표를 받은 화면은 목표를 넘으면 빨갛게, 마우스를 올리면 목표도 보여 준다.
+function TotalOff({ row }: { row: ScheduleRow }) {
+  const offs = countOffs(row);
+  const over = row.offTarget !== undefined && offs > row.offTarget;
+  return (
+    <span title={row.offTarget === undefined ? `OFF ${offs}개` : `OFF ${offs}개 · 목표 ${row.offTarget}개`} className={over ? "text-danger" : ""}>
+      {offs}
     </span>
   );
 }

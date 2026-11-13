@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import ScheduleToggle from "@/components/ui/ScheduleToggle";
 import type { EditableDutyCode, ScheduleRowSort } from "@/types/schedule.type";
@@ -54,6 +55,16 @@ function LockIcon() {
   );
 }
 
+// 고칠 수 없는 근무표 안내 (수간호사 화면의 확정본, 공유 링크 화면)
+export function ScheduleReadOnlyNote({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex items-center gap-2 pl-2 text-[16px] font-bold text-ink-sub">
+      <LockIcon />
+      {children}
+    </p>
+  );
+}
+
 export default function ScheduleToolbar({
   editable,
   readOnlyNote,
@@ -78,10 +89,7 @@ export default function ScheduleToolbar({
   if (!editable) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p className="flex items-center gap-2 pl-2 text-[16px] font-bold text-ink-sub">
-          <LockIcon />
-          {readOnlyNote}
-        </p>
+        <ScheduleReadOnlyNote>{readOnlyNote}</ScheduleReadOnlyNote>
         {sortControl}
       </div>
     );
