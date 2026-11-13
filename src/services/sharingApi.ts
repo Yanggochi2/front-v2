@@ -21,15 +21,18 @@ export type SharedScheduleData = {
   yearMonth: string;
   title: string;
   sort: ApiSharedSort;
+  /** 이름 검색어. 없으면 빈 문자열 */
+  query: string;
   days: ScheduleDay[];
   rows: ScheduleRow[];
 };
 
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
+// q를 주면 이름에 검색어가 들어간 사람과 그 사람의 칸만 온다 (11/13 계약).
 // 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
-export async function getSharedSchedule(token: string, sort?: ApiSharedSort): Promise<SharedScheduleData> {
+export async function getSharedSchedule(token: string, sort?: ApiSharedSort, q?: string): Promise<SharedScheduleData> {
   const s = await apiRequest<ApiSharedSchedule>(`/shared/schedules/${encodeURIComponent(token)}`, {
-    query: { sort },
+    query: { sort, q: q || undefined },
     anonymous: true,
   });
   const { yearMonth: nowYm, day } = todayKst();
@@ -40,6 +43,7 @@ export async function getSharedSchedule(token: string, sort?: ApiSharedSort): Pr
     yearMonth: s.yearMonth,
     title: `${s.yearMonth.slice(0, 4)}년 ${Number(s.yearMonth.slice(5))}월 근무표`,
     sort: s.sort,
+    query: s.query ?? q ?? "",
     days: dates.map((d) => toDay(d, today, new Map())),
     // 서버가 정렬한 순서 그대로 둔다
     rows: s.nurses.map((n) => ({
