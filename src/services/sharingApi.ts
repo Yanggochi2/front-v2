@@ -23,6 +23,8 @@ export type SharedScheduleData = {
   status: ScheduleStatus;
   title: string;
   sort: ApiSharedSort;
+  /** 이름 검색어. 없으면 빈 문자열 */
+  query: string;
   view: ScheduleView;
   activeWeek: number;
   weekCount: number;
@@ -30,14 +32,15 @@ export type SharedScheduleData = {
   rows: ScheduleRow[];
 };
 
-export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string };
+export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string; q?: string };
 
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
 // 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
+// q를 주면 이름에 검색어가 들어간 사람과 그 사람의 칸만 온다 (11/13 계약).
 // 보기를 고르지 않으면 서버 defaultView를 따른다. 주간은 수간호사 화면처럼 1일부터 7일씩 끊는다.
 export async function getSharedSchedule(token: string, query: SharedScheduleQuery = {}): Promise<SharedScheduleData> {
   const s = await apiRequest<ApiSharedSchedule>(`/shared/schedules/${encodeURIComponent(token)}`, {
-    query: { sort: query.sort },
+    query: { sort: query.sort, q: query.q },
     anonymous: true,
   });
   const { yearMonth: nowYm, day } = todayKst();
@@ -52,6 +55,7 @@ export async function getSharedSchedule(token: string, query: SharedScheduleQuer
     status: s.status,
     title: sheetTitle(view, s.yearMonth, week, nowYm, day),
     sort: s.sort,
+    query: s.query ?? query.q ?? "",
     view,
     activeWeek: week,
     weekCount: weekCountOf(s.yearMonth),

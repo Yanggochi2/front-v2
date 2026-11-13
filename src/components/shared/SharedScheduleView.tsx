@@ -2,6 +2,7 @@
 
 import ScheduleGrid from "@/components/schedule/ScheduleGrid";
 import ScheduleLegend from "@/components/schedule/ScheduleLegend";
+import SharedNameSearch from "@/components/shared/SharedNameSearch";
 import ScheduleShareButtons from "@/components/schedule/ScheduleShareButtons";
 import { ScheduleReadOnlyNote } from "@/components/schedule/ScheduleToolbar";
 import ScheduleChip from "@/components/ui/ScheduleChip";
@@ -18,11 +19,12 @@ const STATUS_LABEL: Partial<Record<SharedScheduleData["status"], string>> = {
   ARCHIVED: "지난 근무표",
 };
 
-// 같은 공유 주소에서 보기·주·정렬만 바꾼다. 서버 기본값(숙련도순)은 주소에 싣지 않는다.
-function sharedHref(view: ScheduleView, week: number, sort: ApiSharedSort) {
+// 같은 공유 주소에서 보기·주·정렬·이름 검색만 바꾼다. 서버 기본값(숙련도순)은 주소에 싣지 않는다.
+function sharedHref(view: ScheduleView, week: number, sort: ApiSharedSort, name = "") {
   const q = new URLSearchParams({ view });
   if (view === "week") q.set("week", String(week));
   if (sort === "name") q.set("sort", "name");
+  if (name) q.set("q", name);
   return `?${q}`;
 }
 
@@ -31,19 +33,20 @@ function sharedHref(view: ScheduleView, week: number, sort: ApiSharedSort) {
 export default function SharedScheduleView({ data }: { data: SharedScheduleData }) {
   const isMonth = data.view === "month";
   const viewOptions = [
-    { value: "week", label: "주간", href: sharedHref("week", data.activeWeek, data.sort) },
-    { value: "month", label: "월간", href: sharedHref("month", data.activeWeek, data.sort) },
+    { value: "week", label: "주간", href: sharedHref("week", data.activeWeek, data.sort, data.query) },
+    { value: "month", label: "월간", href: sharedHref("month", data.activeWeek, data.sort, data.query) },
   ];
   const weekOptions = Array.from({ length: data.weekCount }, (_, i) => ({
     value: String(i + 1),
     label: `${i + 1}주`,
-    href: sharedHref("week", i + 1, data.sort),
+    href: sharedHref("week", i + 1, data.sort, data.query),
   }));
   const sortOptions = [
-    { value: "proficiency", label: "숙련도", href: sharedHref(data.view, data.activeWeek, "proficiency") },
-    { value: "name", label: "이름", href: sharedHref(data.view, data.activeWeek, "name") },
+    { value: "proficiency", label: "숙련도", href: sharedHref(data.view, data.activeWeek, "proficiency", data.query) },
+    { value: "name", label: "이름", href: sharedHref(data.view, data.activeWeek, "name", data.query) },
   ];
   const status = STATUS_LABEL[data.status];
+  const noMatch = data.query !== "" && data.rows.length === 0;
 
   return (
     <div className="flex h-full flex-col gap-3 px-6 py-4 print:h-auto print:p-0 print:[zoom:0.86]">
@@ -71,21 +74,35 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
         {/* 2줄: 보기 전용 안내 · 정렬 */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
           <ScheduleReadOnlyNote>확정된 근무표예요. 보기만 할 수 있어요</ScheduleReadOnlyNote>
+          <SharedNameSearch
+            query={data.query}
+            view={data.view}
+            week={data.activeWeek}
+            sort={data.sort}
+            clearHref={sharedHref(data.view, data.activeWeek, data.sort)}
+          />
           <div className="flex items-center gap-2">
             <p className="text-[16px] font-bold text-ink">정렬</p>
             <ScheduleSegmented options={sortOptions} value={data.sort} ariaLabel="간호사 정렬" />
           </div>
         </div>
         <div className="relative min-h-0 flex-1 print:flex-none">
-          <ScheduleGrid
-            view={data.view}
-            days={data.days}
-            rows={data.rows.map((row, index) => ({ row, index }))}
-            coverage={null}
-            selected={null}
-            onScroll={noop}
-            checkColumn={false}
-          />
+          {noMatch ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+              <p className="text-[22px] font-bold text-ink">‘{data.query}’ 이름을 가진 사람이 없어요</p>
+              <p className="text-[17px] font-medium text-ink-sub">이름을 다시 확인해 주세요.</p>
+            </div>
+          ) : (
+            <ScheduleGrid
+              view={data.view}
+              days={data.days}
+              rows={data.rows.map((row, index) => ({ row, index }))}
+              coverage={null}
+              selected={null}
+              onScroll={noop}
+              checkColumn={false}
+            />
+          )}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
           <p className="text-[15px] font-medium text-ink-mute print:hidden">연차·교육은 휴무(O)로 보여요.</p>
