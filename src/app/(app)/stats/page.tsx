@@ -1,10 +1,15 @@
+import StaffDashboard from "@/components/dashboard/StaffDashboard";
 import StatsTable from "@/components/stats/StatsTable";
 import ApiOfflineBanner from "@/components/ui/ApiOfflineBanner";
 import AdminButton from "@/components/ui/AdminButton";
 import AdminEmptyState from "@/components/ui/AdminEmptyState";
 import AdminFilterChip from "@/components/ui/AdminFilterChip";
+import AdminNotice from "@/components/ui/AdminNotice";
 import AdminPageHeader from "@/components/ui/AdminPageHeader";
+import { todayKst } from "@/lib/schedulePeriod";
+import { getDashboard } from "@/services/dashboardApi";
 import { getStats } from "@/services/statsApi";
+import type { ApiDashboard } from "@/types/dashboardApi.type";
 import type { StatsData } from "@/types/stats.type";
 
 const currentMonthLabel = () => {
@@ -15,12 +20,10 @@ const currentMonthLabel = () => {
 // 병동 전체 간호사별 근무 횟수와 OFF 개수 (공정성)
 export default async function StatsPage() {
   // 이번 달 근무표의 간호사별 집계 (statsApi.ts)
-  let data: StatsData | null = null;
-  try {
-    data = await getStats();
-  } catch {
-    data = null;
-  }
+  // 대시보드 그래프(7차 미팅)와 공정성 표는 따로 불러와, 한쪽이 실패해도 다른 쪽은 보인다
+  const [statsResult, dashboardResult] = await Promise.allSettled([getStats(), getDashboard(todayKst().yearMonth)]);
+  const data: StatsData | null = statsResult.status === "fulfilled" ? statsResult.value : null;
+  const dashboard: ApiDashboard | null = dashboardResult.status === "fulfilled" ? dashboardResult.value : null;
 
   const isEmpty = data !== null && data.rows.length === 0;
 
@@ -34,6 +37,12 @@ export default async function StatsPage() {
             : `팀 평균과 많이 다른 사람은 색으로 알려줘요 · ${data.periodLabel}`
         }
       />
+      {dashboard ? (
+        <StaffDashboard data={dashboard} />
+      ) : data ? (
+        <AdminNotice tone="red">대시보드 그래프를 불러오지 못했어요. 잠시 후 새로고침해 주세요.</AdminNotice>
+      ) : null}
+      <h2 className="-mb-3 text-[22px] font-bold text-ink">간호사별 공정성</h2>
       {!data ? (
         <>
           <ApiOfflineBanner retryHref="/stats" />
