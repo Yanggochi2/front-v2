@@ -3,12 +3,15 @@ export type ApiNurseRole = "HEAD_NURSE" | "NURSE";
 // 프리셉터는 직급이 아니라 역할이라 isPreceptor로 따로 온다 (구형 PRECEPTOR 입력은 백엔드가 GENERAL + isPreceptor로 바꾼다)
 export type ApiDutyRole = "CHARGE" | "NEW" | "GENERAL" | "NIGHT_ONLY";
 export type ApiNurseStatus = "ACTIVE" | "PREGNANT" | "ON_LEAVE" | "RETIRED";
+// 직종 (11/13 계약). 권한(role)과 따로다. 간호조무사는 간호사 D/E/N 최소 인원에 들어가지 않는다.
+export type ApiStaffType = "NURSE" | "NURSING_ASSISTANT";
 
 // TODO: 백엔드 확정 후 결정 — id 타입, 역할별로 어떤 필드가 빠지는지
 export type ApiNurse = {
   id: string;
   name: string;
   role: ApiNurseRole;
+  staffType?: ApiStaffType;
   dutyRole?: ApiDutyRole;
   status?: ApiNurseStatus | null;
   joinedYear?: number | null; // 입사 연도. 입사일 원본은 백엔드만 가진다
@@ -28,11 +31,15 @@ export type ApiNurse = {
 // NUR-01 본문. role은 보내지 않는다.
 export type NurseCreate = {
   name: string;
+  /** 간호조무사는 dutyRole GENERAL·프리셉터 아님만 된다 (아니면 422 INVALID_STAFF_ROLE) */
+  staffType: ApiStaffType;
   dutyRole: ApiDutyRole;
   status: ApiNurseStatus;
   joinedYear: number; // 1900 ~ 올해. 같은 이름·입사 연도의 재직자가 있으면 409 NURSE_ALREADY_EXISTS
   isPreceptor: boolean;
+  /** 입사 연도로 가능한 범위(서버 기준) 밖이면 400 VALIDATION_ERROR. 빼면 서버가 최대값으로 채운다 */
   careerMonths: number;
+  /** 경력 3개월 이하는 1~2만 된다. 빼면 서버가 경력으로 정한다 */
   skillLevel: number;
   affiliationStart: string;
   affiliationEnd?: string | null;
@@ -59,6 +66,7 @@ export type ApiNurseImportRowError = { row: number; field: string; reason: strin
 export type NurseListQuery = {
   q?: string;
   role?: ApiNurseRole;
+  staffType?: ApiStaffType;
   dutyRole?: ApiDutyRole;
   status?: ApiNurseStatus;
   includeRetired?: boolean;

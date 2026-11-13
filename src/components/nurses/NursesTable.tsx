@@ -1,7 +1,7 @@
 import RnChip from "@/components/ui/RnChip";
 import RnButton from "@/components/ui/RnButton";
 import NurseDeleteButton from "./NurseDeleteButton";
-import { DUTY_ROLE_LABEL, NURSE_ROLE_LABEL, NURSE_STATUS_LABEL, PRECEPTOR_LABEL } from "@/constants/nurses.constants";
+import { DUTY_ROLE_LABEL, NURSE_ROLE_LABEL, NURSE_STATUS_LABEL, PRECEPTOR_LABEL, STAFF_TYPE_LABEL } from "@/constants/nurses.constants";
 import type { Nurse } from "@/types/nurses.type";
 
 // 권한·듀티 역할은 "역할" 한 칸으로 합치고, 상태는 재직이 아닐 때만 이름 옆에 보인다.
@@ -50,6 +50,7 @@ export default function NursesTable({ items }: { items: Nurse[] }) {
                 <td className={`${cell} w-[280px]`}>
                   <span className="flex items-center gap-2">
                     {n.role === "HEAD_NURSE" ? <RnChip tone="brand">{NURSE_ROLE_LABEL.HEAD_NURSE}</RnChip> : null}
+                    {n.staffType === "NURSING_ASSISTANT" ? <RnChip tone="gray">{STAFF_TYPE_LABEL.NURSING_ASSISTANT}</RnChip> : null}
                     {showDuty && n.dutyRole ? (
                       <RnChip tone={n.dutyRole === "CHARGE" ? "brand" : n.dutyRole === "NEW" ? "danger" : "gray"}>
                         {DUTY_ROLE_LABEL[n.dutyRole]}

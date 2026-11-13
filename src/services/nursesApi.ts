@@ -26,6 +26,7 @@ export function mapNurse(n: ApiNurse): Nurse {
     id: n.id,
     name: n.name,
     role: n.role,
+    staffType: n.staffType,
     dutyRole: n.dutyRole as DutyRole | undefined,
     isPreceptor: n.isPreceptor,
     status: (n.status ?? undefined) as NurseStatus | undefined,
