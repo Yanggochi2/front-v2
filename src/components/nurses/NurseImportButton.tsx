@@ -121,7 +121,7 @@ function NurseImportDialog({ onClose }: { onClose: () => void }) {
             <ol className="flex flex-col gap-5 text-[17px] font-medium text-ink-sub">
               <li className="flex flex-col gap-3">
                 <span>
-                  <b className="text-ink">1.</b> 등록 양식을 내려받아 간호사 정보를 한 줄에 한 명씩 채워 주세요. 쓰는 방법은 양식의 ‘작성 안내’ 시트에 있어요.
+                  <b className="text-ink">1.</b> 등록 양식을 내려받아 간호사 정보를 한 줄에 한 명씩 채워 주세요. 간호조무사는 ‘직종’ 열에 적고, 비워 두면 간호사로 등록돼요. 쓰는 방법은 양식의 ‘작성 안내’ 시트에 있어요.
                 </span>
                 <RnButton variant="secondary" onClick={saveTemplate} disabled={busy !== null} className="self-start">
                   {busy === "template" ? "내려받는 중…" : "등록 양식 내려받기"}

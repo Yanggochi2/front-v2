@@ -8,8 +8,10 @@ import {
   PRECEPTOR_LABEL,
   REGISTRABLE_STATUSES,
   SKILL_LEVELS,
+  STAFF_TYPE_LABEL,
 } from "@/constants/nurses.constants";
-import type { DutyRole, NurseDraft, NurseDraftErrors } from "@/types/nurses.type";
+import { allowedSkills, careerPatch, hireYearPatch, staffTypePatch } from "@/lib/nurseDraft";
+import type { DutyRole, NurseDraft, NurseDraftErrors, StaffType } from "@/types/nurses.type";
 
 const baseInputCls =
   "h-14 w-full rounded-[14px] bg-surface px-5 text-[18px] font-medium text-ink placeholder:text-ink-faint";
@@ -30,6 +32,7 @@ function Field({ label, hint, error, children }: { label: string; hint?: string;
 }
 
 const DUTY_ROLES: DutyRole[] = ["GENERAL", "CHARGE", "NEW", "NIGHT_ONLY"];
+const STAFF_TYPES: StaffType[] = ["NURSE", "NURSING_ASSISTANT"];
 
 type Props = {
   draft: NurseDraft;
@@ -44,6 +47,8 @@ type Props = {
 export default function NurseProfileFields({ draft, onChange, newNurses, errors = {} }: Props) {
   const togglePrecepted = (id: string) =>
     onChange({ preceptorOf: draft.preceptorOf.includes(id) ? draft.preceptorOf.filter((x) => x !== id) : [...draft.preceptorOf, id] });
+  const isAssistant = draft.staffType === "NURSING_ASSISTANT";
+  const skills = allowedSkills(draft, SKILL_LEVELS);
 
   return (
     <>
@@ -59,7 +64,16 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
           className={inputCls(errors.name)}
         />
       </Field>
-      <Field label="입사 연도" error={errors.hireYear}>
+      <Field label="직종" hint="간호조무사는 간호사 필요 인원에 세지 않아요">
+        <div className="flex flex-wrap gap-2">
+          {STAFF_TYPES.map((t) => (
+            <RnOptionButton key={t} selected={draft.staffType === t} onClick={() => onChange(staffTypePatch(t))}>
+              {STAFF_TYPE_LABEL[t]}
+            </RnOptionButton>
+          ))}
+        </div>
+      </Field>
+      <Field label="입사 연도" hint="넣으면 경력·숙련도를 채워 드려요" error={errors.hireYear}>
         <input
           type="number"
           required
@@ -69,51 +83,56 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
           placeholder="예: 2022"
           aria-label="입사 연도"
           value={draft.hireYear}
-          onChange={(e) => onChange({ hireYear: e.target.value })}
+          onChange={(e) => onChange(hireYearPatch(e.target.value))}
           className={inputCls(errors.hireYear)}
         />
       </Field>
 
-      <Field label="직급" hint="차지·신입·나이트 전담은 근무 배정 규칙이 달라요">
-        <div className="flex flex-wrap gap-2">
-          {DUTY_ROLES.map((r) => (
-            <RnOptionButton key={r} selected={draft.dutyRole === r} onClick={() => onChange({ dutyRole: r })}>
-              {DUTY_ROLE_LABEL[r]}
-            </RnOptionButton>
-          ))}
-        </div>
-      </Field>
-
-      <Field label={PRECEPTOR_LABEL} hint="신입을 가르치는 역할이에요. 직급과 따로 정해요">
-        <div className="flex flex-wrap gap-2">
-          <RnOptionButton selected={!draft.isPreceptor} onClick={() => onChange({ isPreceptor: false })}>
-            맡지 않음
-          </RnOptionButton>
-          <RnOptionButton selected={draft.isPreceptor} onClick={() => onChange({ isPreceptor: true })}>
-            맡음
-          </RnOptionButton>
-        </div>
-      </Field>
-
-      {draft.isPreceptor ? (
-        <Field label="담당 신입" hint="재직 중인 신입 간호사만 고를 수 있어요">
-          {newNurses === null ? (
-            <p className="text-[17px] font-medium text-danger">신입 간호사 목록을 불러오지 못했어요. 새로고침해 주세요.</p>
-          ) : newNurses.length === 0 ? (
-            <p className="text-[17px] font-medium text-ink-mute">등록된 신입 간호사가 없어요</p>
-          ) : (
+      {/* 간호조무사는 일반 직급만, 프리셉터를 맡지 않는다 (11/13 계약) */}
+      {isAssistant ? null : (
+        <>
+          <Field label="직급" hint="차지·신입·나이트 전담은 근무 배정 규칙이 달라요">
             <div className="flex flex-wrap gap-2">
-              {newNurses.map((n) => (
-                <RnOptionButton key={n.id} selected={draft.preceptorOf.includes(n.id)} onClick={() => togglePrecepted(n.id)}>
-                  {n.name}
+              {DUTY_ROLES.map((r) => (
+                <RnOptionButton key={r} selected={draft.dutyRole === r} onClick={() => onChange({ dutyRole: r })}>
+                  {DUTY_ROLE_LABEL[r]}
                 </RnOptionButton>
               ))}
             </div>
-          )}
-        </Field>
-      ) : null}
+          </Field>
 
-      <Field label="총 경력" hint="입사 전 경력까지 합쳐요" error={errors.career}>
+          <Field label={PRECEPTOR_LABEL} hint="신입을 가르치는 역할이에요. 직급과 따로 정해요">
+            <div className="flex flex-wrap gap-2">
+              <RnOptionButton selected={!draft.isPreceptor} onClick={() => onChange({ isPreceptor: false })}>
+                맡지 않음
+              </RnOptionButton>
+              <RnOptionButton selected={draft.isPreceptor} onClick={() => onChange({ isPreceptor: true })}>
+                맡음
+              </RnOptionButton>
+            </div>
+          </Field>
+
+          {draft.isPreceptor ? (
+            <Field label="담당 신입" hint="재직 중인 신입 간호사만 고를 수 있어요">
+              {newNurses === null ? (
+                <p className="text-[17px] font-medium text-danger">신입 간호사 목록을 불러오지 못했어요. 새로고침해 주세요.</p>
+              ) : newNurses.length === 0 ? (
+                <p className="text-[17px] font-medium text-ink-mute">등록된 신입 간호사가 없어요</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {newNurses.map((n) => (
+                    <RnOptionButton key={n.id} selected={draft.preceptorOf.includes(n.id)} onClick={() => togglePrecepted(n.id)}>
+                      {n.name}
+                    </RnOptionButton>
+                  ))}
+                </div>
+              )}
+            </Field>
+          ) : null}
+        </>
+      )}
+
+      <Field label="총 경력" hint="입사 연도에 맞게 넣어 주세요" error={errors.career}>
         <div className="flex items-center gap-2.5">
           <input
             type="number"
@@ -121,7 +140,7 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
             aria-label="경력 년"
             aria-invalid={errors.career ? true : undefined}
             value={draft.careerYears}
-            onChange={(e) => onChange({ careerYears: e.target.value })}
+            onChange={(e) => onChange(careerPatch(draft, { careerYears: e.target.value }))}
             className={`${inputCls(errors.career)} max-w-[150px]`}
           />
           <span className="text-[18px] font-medium text-ink-sub">년</span>
@@ -132,15 +151,19 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
             aria-label="경력 개월"
             aria-invalid={errors.career ? true : undefined}
             value={draft.careerMonths}
-            onChange={(e) => onChange({ careerMonths: e.target.value })}
+            onChange={(e) => onChange(careerPatch(draft, { careerMonths: e.target.value }))}
             className={`${inputCls(errors.career)} max-w-[150px]`}
           />
           <span className="text-[18px] font-medium text-ink-sub">개월</span>
         </div>
       </Field>
-      <Field label="숙련도" hint="수간호사만 볼 수 있어요">
+      <Field
+        label="숙련도"
+        hint={skills.length < SKILL_LEVELS.length ? "경력 3개월 이하는 1~2만 고를 수 있어요" : "수간호사만 볼 수 있어요"}
+        error={errors.skill}
+      >
         <div className="flex flex-wrap gap-2">
-          {SKILL_LEVELS.map((lv) => (
+          {skills.map((lv) => (
             <RnOptionButton
               key={lv}
               selected={draft.skill === lv}

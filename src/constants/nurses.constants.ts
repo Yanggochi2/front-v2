@@ -1,8 +1,13 @@
-import type { DutyRole, NurseRole, NurseStatus } from "@/types/nurses.type";
+import type { DutyRole, NurseRole, NurseStatus, StaffType } from "@/types/nurses.type";
 
 export const NURSE_ROLE_LABEL: Record<NurseRole, string> = {
   HEAD_NURSE: "수간호사",
   NURSE: "간호사",
+};
+
+export const STAFF_TYPE_LABEL: Record<StaffType, string> = {
+  NURSE: "간호사",
+  NURSING_ASSISTANT: "간호조무사",
 };
 
 export const DUTY_ROLE_LABEL: Record<DutyRole, string> = {
