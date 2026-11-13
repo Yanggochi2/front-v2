@@ -40,6 +40,7 @@ src/
 - 사이드바 240px 고정, 본문은 `max-w-*`로 가운데 정렬. 표·시트는 자기 컨테이너 안에서 가로 스크롤하고 첫 열은 sticky.
 - 모바일/태블릿은 지원하지 않으므로 `sm:`, `md:`, `lg:` 같은 반응형 접두사를 쓰지 않는다.
 - 앱 화면((app), (onboarding))은 `.ui-zoom`으로 80% 비율을 쓴다. 랜딩(/)에는 적용하지 않는다.
+- 수간호사 화면((app))은 사이드바(닫으면 상단 바)의 "큰 글씨" 토글로 100% 비율(`.ui-zoom-large`)을 쓸 수 있다. 선택은 사이드바 열림/닫힘처럼 브라우저 `localStorage`에만 기억한다 (`useStoredFlag`). 공유 화면·로그인 화면에는 없다.
 
 ## 랜딩
 - `src/app/(marketing)/page.tsx` + `src/components/landing/*`. 문구·예시는 `src/constants/landing.constants.ts`.

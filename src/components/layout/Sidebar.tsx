@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLogout } from "@/hooks/useLogout";
 import { isNavActive, useNavModel, type NavItem } from "@/hooks/useNavModel";
+import ScheduleToggle from "@/components/ui/ScheduleToggle";
 import type { ShellInfo } from "@/types/shell.type";
 import NavIcon from "./NavIcon";
 
@@ -40,7 +41,14 @@ function NavList({ items }: { items: NavItem[] }) {
   );
 }
 
-export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose: () => void }) {
+type Props = {
+  shell: ShellInfo;
+  onClose: () => void;
+  largeText: boolean;
+  onLargeTextChange: (next: boolean) => void;
+};
+
+export default function Sidebar({ shell, onClose, largeText, onLargeTextChange }: Props) {
   const nav = useNavModel();
 
   return (
@@ -74,6 +82,9 @@ export default function Sidebar({ shell, onClose }: { shell: ShellInfo; onClose:
       <p className="px-4 pt-5 pb-1 text-[16px] font-bold text-ink-mute">병동 관리</p>
       <NavList items={nav.adminItems} />
       <div className="min-h-4 flex-1" />
+      <div className="px-2 pb-2">
+        <ScheduleToggle checked={largeText} onChange={onLargeTextChange} label="큰 글씨" />
+      </div>
       <SidebarAccount userName={shell.userName} />
     </aside>
   );
