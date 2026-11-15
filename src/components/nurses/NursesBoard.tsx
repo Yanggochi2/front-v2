@@ -3,8 +3,8 @@
 import { useState } from "react";
 import RnFilterChip from "@/components/ui/RnFilterChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
-import type { DutyRole, Nurse } from "@/types/nurses.type";
-import { DUTY_ROLE_LABEL, PRECEPTOR_LABEL } from "@/constants/nurses.constants";
+import type { DutyRole, Nurse, StaffType } from "@/types/nurses.type";
+import { DUTY_ROLE_LABEL, PRECEPTOR_LABEL, STAFF_TYPE_LABEL } from "@/constants/nurses.constants";
 import { compareNurses, type NurseSortKey } from "@/lib/nurseSort";
 import NursesTable from "./NursesTable";
 
@@ -18,6 +18,11 @@ const SORTS: { value: NurseSortKey; label: string }[] = [
 
 const ROLE_FILTERS: RoleFilter[] = ["ALL", "CHARGE", "GENERAL", "NEW", "NIGHT_ONLY", "PRECEPTOR"];
 
+type StaffFilter = StaffType | "ALL";
+const STAFF_FILTERS: StaffFilter[] = ["ALL", "NURSE", "NURSING_ASSISTANT"];
+// staffType이 없는 응답(11/13 계약 전)은 간호사로 본다
+const matchesStaff = (n: Nurse, f: StaffFilter) => f === "ALL" || (n.staffType ?? "NURSE") === f;
+
 const matches = (n: Nurse, f: RoleFilter) => f === "ALL" || (f === "PRECEPTOR" ? n.isPreceptor === true : n.dutyRole === f);
 
 const sortFields = (n: Nurse) => ({
@@ -29,12 +34,15 @@ const sortFields = (n: Nurse) => ({
 export default function NursesBoard({ items }: { items: Nurse[] }) {
   const [sort, setSort] = useState<NurseSortKey>("skill");
   const [role, setRole] = useState<RoleFilter>("ALL");
+  const [staff, setStaff] = useState<StaffFilter>("ALL");
   const [includeRetired, setIncludeRetired] = useState(false);
 
   const pool = items.filter((n) => includeRetired || n.status !== "RETIRED");
-  const count = (f: RoleFilter) => pool.filter((n) => matches(n, f)).length;
+  const staffCount = (f: StaffFilter) => pool.filter((n) => matchesStaff(n, f)).length;
+  const staffPool = pool.filter((n) => matchesStaff(n, staff));
+  const count = (f: RoleFilter) => staffPool.filter((n) => matches(n, f)).length;
   const retiredCount = items.filter((n) => n.status === "RETIRED").length;
-  const visible = pool
+  const visible = staffPool
     .filter((n) => matches(n, role))
     .sort((a, b) => compareNurses(sort, sortFields(a), sortFields(b)));
 
@@ -44,6 +52,14 @@ export default function NursesBoard({ items }: { items: Nurse[] }) {
         <div className="flex items-center gap-3">
           <p className="text-[17px] font-bold text-ink">정렬</p>
           <ScheduleSegmented options={SORTS} value={sort} onChange={setSort} ariaLabel="정렬" itemClassName="w-24" />
+        </div>
+        <div className="flex flex-wrap items-center gap-3" role="group" aria-label="직종으로 보기">
+          <p className="text-[17px] font-bold text-ink">직종</p>
+          {STAFF_FILTERS.map((f) => (
+            <RnFilterChip key={f} selected={staff === f} onClick={() => setStaff(f)}>
+              {f === "ALL" ? "전체" : STAFF_TYPE_LABEL[f]} {staffCount(f)}
+            </RnFilterChip>
+          ))}
         </div>
         <div className="flex flex-wrap items-center gap-3" role="group" aria-label="역할로 보기">
           <p className="text-[17px] font-bold text-ink">역할</p>

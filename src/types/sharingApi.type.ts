@@ -19,6 +19,8 @@ export type ApiSharedSchedule = {
   defaultView: "month" | "week";
   defaultSort: ApiSharedSort;
   sort: ApiSharedSort;
+  /** ?q= 이름 검색어 (앞뒤 공백 제거). 11/13 계약부터 온다 */
+  query?: string;
   nurses: { id: string; name: string; role: ApiNurseRole; dutyRole: ApiDutyRole }[];
   cells: { nurseId: string; date: string; dutyCode: ApiDutyCode | null; editable: boolean }[];
 };

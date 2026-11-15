@@ -16,6 +16,7 @@ const FIELD_OF: Partial<Record<keyof NurseDraft, NurseDraftField>> = {
   hireYear: "hireYear",
   careerYears: "career",
   careerMonths: "career",
+  skill: "skill",
   periodStart: "periodStart",
 };
 
@@ -38,7 +39,7 @@ export default function NurseForm({ nurse, newNurses }: Props) {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // 브라우저 기본 말풍선 대신 칸 아래에 문구를 보여 준다 (form noValidate)
-    const found = validateNurseDraft(draft);
+    const found = validateNurseDraft(draft, editing ? initialDraft : undefined);
     setFieldErrors(found);
     if (Object.keys(found).length > 0) {
       setError("빨간 칸을 확인해 주세요.");

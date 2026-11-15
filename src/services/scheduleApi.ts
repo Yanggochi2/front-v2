@@ -169,7 +169,7 @@ function toSheet(
   };
 }
 
-function sheetTitle(view: "week" | "month", yearMonth: string, week: number, nowYm: string, day: number) {
+export function sheetTitle(view: "week" | "month", yearMonth: string, week: number, nowYm: string, day: number) {
   const month = Number(yearMonth.slice(5));
   if (view === "month") return `${month}월 근무`;
   if (yearMonth === nowYm && week === Math.min(weekCountOf(yearMonth), Math.ceil(day / 7))) return "이번 주 근무";
