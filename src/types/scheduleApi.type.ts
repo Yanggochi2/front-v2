@@ -101,7 +101,7 @@ export type ApiGenerationJob = {
   progress: number; // TODO: 0~1인지 0~100인지 명세 없음
   hardViolationCount: number;
   metrics: unknown; // TODO: 백엔드 확정 후 결정
-  conflicts: unknown; // TODO: 백엔드 확정 후 결정
+  conflicts: unknown; // 명세에는 모양이 없다. 지금 백엔드는 해 없음일 때 지키지 못한 규칙을 위반(ApiViolation) 모양으로 준다
   relaxations: ApiRelaxation[]; // 해 없음(NO_SOLUTION)일 때 완화할 수 있는 규칙들
   error?: string | null; // 실패(FAILED) 사유. 명세에는 없고 백엔드 응답에 있다
 };
