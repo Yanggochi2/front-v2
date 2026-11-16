@@ -4,6 +4,7 @@ import { useState } from "react";
 import ScheduleButton from "@/components/ui/ScheduleButton";
 import { OFF_TARGET_FORMULA_LABEL } from "@/constants/rules.constants";
 import { useSubmit } from "@/hooks/useSubmit";
+import type { OffCarrySummary } from "@/services/dashboardApi";
 import { patchOffTarget } from "@/services/rulesApi";
 import type { ApiOffTarget } from "@/types/rulesApi.type";
 
@@ -15,9 +16,29 @@ type Props = {
   yearMonth: string;
   initial: ApiOffTarget | null; // 그 달 근무표가 없으면 null
   locked: boolean; // 확정된 근무표면 고칠 수 없다 (서버도 409 SCHEDULE_CONFIRMED)
+  carry?: OffCarrySummary | null; // 지난달에서 넘어온 OFF. 간호사별 목표에 더해진다
 };
 
-export default function OffTargetCard({ yearMonth, initial, locked }: Props) {
+// 이월 안내에 이름을 몇 명까지 적을지
+const CARRY_NAMES = 5;
+
+// 지난달 확정본에서 못 쓴 OFF는 그 간호사의 이번 달 목표에 더해진다 (11/13 미팅 "남은 오프 이월").
+function CarryNote({ carry }: { carry: OffCarrySummary }) {
+  if (carry.nurses.length === 0) return null;
+  const shown = carry.nurses.slice(0, CARRY_NAMES).map((n) => `${n.name} ${n.count}`).join(", ");
+  const more = carry.nurses.length - CARRY_NAMES;
+  return (
+    <p className="rounded-[14px] bg-primary-soft px-4 py-2.5 text-[16px] font-medium text-ink-sub">
+      <span className="font-bold text-primary">지난달 이월 OFF {carry.total}개</span> · {carry.nurses.length}명의 이번 달 목표에 더해져요
+      <span className="block text-[15px] text-ink-mute">
+        {shown}
+        {more > 0 ? ` 외 ${more}명` : ""}
+      </span>
+    </p>
+  );
+}
+
+export default function OffTargetCard({ yearMonth, initial, locked, carry }: Props) {
   const [target, setTarget] = useState(initial);
   const [count, setCount] = useState(initial ? String(initial.targetCount) : "");
   const [reason, setReason] = useState("");
@@ -58,6 +79,7 @@ export default function OffTargetCard({ yearMonth, initial, locked }: Props) {
             : `직접 정함 · 자동이면 ${target.autoCount}일${target.reason ? ` · ${target.reason}` : ""}`}
         </span>
       </div>
+      {carry ? <CarryNote carry={carry} /> : null}
       {locked ? <p className="text-[16px] font-medium text-ink-mute">확정된 근무표라 고칠 수 없어요. 고치려면 확정을 취소해 주세요.</p> : null}
       {changed && !locked ? (
         <div className="flex flex-wrap items-center gap-3">

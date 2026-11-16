@@ -121,7 +121,7 @@ function toSheet(
   const today = `${nowYm}-${String(day).padStart(2, "0")}`;
 
   const cellMap = new Map(schedule.cells.map((c) => [`${c.nurseId}|${c.date}`, c]));
-  const offTargets = new Map((schedule.statistics ?? []).map((st) => [st.nurseId, st.offTarget]));
+  const stats = new Map((schedule.statistics ?? []).map((st) => [st.nurseId, st]));
   const rows: ScheduleRow[] = groupRows(
     schedule.nurses.map((n) => ({
       nurseKey: n.id,
@@ -130,7 +130,8 @@ function toSheet(
       role: n.role,
       dutyRole: n.dutyRole,
       careerMonths: n.careerMonths ?? undefined,
-      offTarget: offTargets.get(n.id) ?? undefined,
+      offTarget: stats.get(n.id)?.offTarget ?? undefined,
+      offCarry: stats.get(n.id)?.offCarry || undefined,
       cells: dates.map((d) => {
         const c = cellMap.get(`${n.id}|${d}`);
         // 칸이 없으면 소속 기간 밖으로 보고 편집 불가로 둔다 (추측).

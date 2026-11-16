@@ -48,6 +48,8 @@ export type ScheduleRow = {
   careerMonths?: number; // 정렬용 총경력(개월). 받은 것만
   // 그 달 OFF 목표(이월 포함). 근무표 응답 statistics에서 받는다. 없으면(공유 화면 등) 남은 OFF 대신 OFF 수를 보인다
   offTarget?: number;
+  // 지난달(확정)에 못 써서 이번 달로 넘어온 OFF 수. offTarget에 이미 들어 있다
+  offCarry?: number;
   cells: ScheduleCell[];
   needsCheck?: boolean;
 };
