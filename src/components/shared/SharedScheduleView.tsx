@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import ScheduleGrid from "@/components/schedule/ScheduleGrid";
 import ScheduleLegend from "@/components/schedule/ScheduleLegend";
 import SharedNameSearch from "@/components/shared/SharedNameSearch";
@@ -46,7 +47,14 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
     { value: "name", label: "이름", href: sharedHref(data.view, data.activeWeek, "name", data.query) },
   ];
   const status = STATUS_LABEL[data.status];
-  const noMatch = data.query !== "" && data.rows.length === 0;
+  const searched = data.query !== "";
+  const focusRows = useMemo(() => new Set(data.matched), [data.matched]);
+  const noMatch = searched && focusRows.size === 0;
+
+  // 찾은 줄이 화면 밖(주간 보기·낮은 화면)에 있으면 보이는 곳으로 옮긴다
+  useEffect(() => {
+    if (focusRows.size > 0) document.querySelector("[data-focus-row]")?.scrollIntoView({ block: "nearest" });
+  }, [focusRows]);
 
   return (
     <div className="flex h-full flex-col gap-3 px-6 py-4 print:h-auto print:p-0 print:[zoom:0.86]">
@@ -80,29 +88,33 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
         </div>
         {/* 2줄: 보기 전용 안내 · 정렬 */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
-          <ScheduleReadOnlyNote>확정된 근무표예요. 보기만 할 수 있어요</ScheduleReadOnlyNote>
+          {noMatch ? (
+            <p role="status" className="pl-2 text-[16px] font-bold text-danger">
+              ‘{data.query}’ 이름을 가진 사람이 없어요. 이름을 다시 확인해 주세요
+            </p>
+          ) : searched ? (
+            <p role="status" className="pl-2 text-[16px] font-bold text-primary">
+              ‘{data.query}’ {focusRows.size > 1 ? `${focusRows.size}명의 줄` : "줄"}을 진하게 표시했어요. 같은 날 근무하는 사람도 함께 볼 수 있어요
+            </p>
+          ) : (
+            <ScheduleReadOnlyNote>확정된 근무표예요. 보기만 할 수 있어요</ScheduleReadOnlyNote>
+          )}
           <div className="flex items-center gap-2">
             <p className="text-[16px] font-bold text-ink">정렬</p>
             <ScheduleSegmented options={sortOptions} value={data.sort} ariaLabel="간호사 정렬" />
           </div>
         </div>
         <div className="relative min-h-0 flex-1 print:flex-none">
-          {noMatch ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-              <p className="text-[22px] font-bold text-ink">‘{data.query}’ 이름을 가진 사람이 없어요</p>
-              <p className="text-[17px] font-medium text-ink-sub">이름을 다시 확인해 주세요.</p>
-            </div>
-          ) : (
-            <ScheduleGrid
-              view={data.view}
-              days={data.days}
-              rows={data.rows.map((row, index) => ({ row, index }))}
-              coverage={null}
-              selected={null}
-              onScroll={noop}
-              checkColumn={false}
-            />
-          )}
+          <ScheduleGrid
+            view={data.view}
+            days={data.days}
+            rows={data.rows.map((row, index) => ({ row, index }))}
+            coverage={null}
+            selected={null}
+            onScroll={noop}
+            checkColumn={false}
+            focusRows={focusRows}
+          />
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
           <p className="text-[15px] font-medium text-ink-mute print:hidden">연차·교육은 휴무(O)로 보여요.</p>
