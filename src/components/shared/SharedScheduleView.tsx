@@ -67,20 +67,20 @@ export default function SharedScheduleView({ data }: { data: SharedScheduleData 
               <ScheduleSegmented options={weekOptions} value={String(data.activeWeek)} ariaLabel="주 선택" itemClassName="w-14" />
             )}
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <SharedNameSearch
+              query={data.query}
+              view={data.view}
+              week={data.activeWeek}
+              sort={data.sort}
+              clearHref={sharedHref(data.view, data.activeWeek, data.sort)}
+            />
             <ScheduleShareButtons scheduleId="" yearMonth={data.yearMonth} canExport={false} />
           </div>
         </div>
         {/* 2줄: 보기 전용 안내 · 정렬 */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[18px] bg-canvas px-2.5 py-1.5 ring-1 ring-line ring-inset print:hidden">
           <ScheduleReadOnlyNote>확정된 근무표예요. 보기만 할 수 있어요</ScheduleReadOnlyNote>
-          <SharedNameSearch
-            query={data.query}
-            view={data.view}
-            week={data.activeWeek}
-            sort={data.sort}
-            clearHref={sharedHref(data.view, data.activeWeek, data.sort)}
-          />
           <div className="flex items-center gap-2">
             <p className="text-[16px] font-bold text-ink">정렬</p>
             <ScheduleSegmented options={sortOptions} value={data.sort} ariaLabel="간호사 정렬" />
