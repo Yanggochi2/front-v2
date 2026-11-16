@@ -28,6 +28,22 @@ export const defaultSkill = (careerMonths: number) => (careerMonths <= NEW_CAREE
 const draftCareerMonths = (d: Pick<NurseDraft, "careerYears" | "careerMonths">) =>
   Number(d.careerYears.trim() || 0) * 12 + Number(d.careerMonths.trim() || 0);
 
+// 새로 등록할 때 서버가 정하는 숙련도와 그 이유 (백엔드 nurses.recommended_skill과 같은 식).
+// 등록 요청에 담은 숙련도는 서버가 쓰지 않으므로, 등록 화면은 고르게 하지 않고 이 값을 보여 준다. 등록한 뒤 수정에서는 바꿀 수 있다.
+// 경력 3개월 이하 1 · 6개월 이하 2 · 경력자라도 이 병동에 온 지 3개월 이하면 2(적응 기간) · 그 밖에는 3
+export function recommendedSkill(d: Pick<NurseDraft, "careerYears" | "careerMonths" | "periodStart">): { level: number; reason: string } {
+  const career = draftCareerMonths(d);
+  if (career <= NEW_CAREER_MAX_MONTHS) return { level: 1, reason: "경력 3개월 이하는 1로 시작해요" };
+  if (career <= 6) return { level: 2, reason: "경력 6개월 이하는 2로 시작해요" };
+  const start = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d.periodStart);
+  if (start) {
+    const { yearMonth, day } = todayKst();
+    const wardMonths = (Number(yearMonth.slice(0, 4)) - Number(start[1])) * 12 + Number(yearMonth.slice(5, 7)) - Number(start[2]) - (day < Number(start[3]) ? 1 : 0);
+    if (wardMonths <= 3) return { level: 2, reason: "이 병동에 온 지 3개월 이하면 2로 시작해요 (적응 기간)" };
+  }
+  return { level: 3, reason: "경력 6개월이 넘으면 3으로 시작해요" };
+}
+
 // 경력 3개월 이하면 숙련도는 1~2만 고를 수 있다
 export const allowedSkills = (d: Pick<NurseDraft, "careerYears" | "careerMonths">, levels: number[]) =>
   draftCareerMonths(d) <= NEW_CAREER_MAX_MONTHS ? levels.filter((lv) => lv <= 2) : levels;
@@ -77,7 +93,8 @@ export function validateNurseDraft(d: NurseDraft, initial?: NurseDraft): NurseDr
     const { min, max } = careerRange(Number(d.hireYear));
     const total = draftCareerMonths(d);
     if (total < min || total > max) errors.career = `${d.hireYear}년 입사면 경력은 ${monthsLabel(min)} ~ ${monthsLabel(max)} 사이예요.`;
-    else if (total <= NEW_CAREER_MAX_MONTHS && d.skill > 2) errors.skill = "경력 3개월 이하는 숙련도 1~2만 고를 수 있어요.";
+    // 새로 등록할 때는 숙련도를 서버가 정하므로 수정할 때만 본다
+    else if (initial && total <= NEW_CAREER_MAX_MONTHS && d.skill > 2) errors.skill = "경력 3개월 이하는 숙련도 1~2만 고를 수 있어요.";
   }
   if (!d.periodStart) errors.periodStart = "소속 시작일을 골라 주세요.";
   return errors;

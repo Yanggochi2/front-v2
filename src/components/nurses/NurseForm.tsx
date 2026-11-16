@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import RnButton from "@/components/ui/RnButton";
-import { emptyNurseDraft, serverNurseErrors, toNurseCreate, toNurseDraft, toNursePatch, validateNurseDraft } from "@/lib/nurseDraft";
+import { emptyNurseDraft, recommendedSkill, serverNurseErrors, toNurseCreate, toNurseDraft, toNursePatch, validateNurseDraft } from "@/lib/nurseDraft";
 import { formatApiError } from "@/lib/formatApiError";
 import { createNurse, updateNurse } from "@/services/nursesApi";
 import type { NurseDetail, NurseDraft, NurseDraftErrors, NurseDraftField } from "@/types/nurses.type";
@@ -56,7 +56,8 @@ export default function NurseForm({ nurse, newNurses }: Props) {
         router.refresh();
       } else {
         // 권한(role)은 이 화면에서 설정하지 않는다. 새로 등록하는 간호사는 항상 일반 간호사다.
-        await createNurse(toNurseCreate(draft));
+        // 등록할 때 숙련도는 서버가 경력·소속 시작일로 정한다. 화면에 보여 준 값과 같은 값을 보낸다.
+        await createNurse({ ...toNurseCreate(draft), skillLevel: recommendedSkill(draft).level });
         setRegistered(draft.name.trim());
       }
     } catch (err) {
@@ -74,6 +75,7 @@ export default function NurseForm({ nurse, newNurses }: Props) {
           <NurseProfileFields
             draft={draft}
             errors={fieldErrors}
+            autoSkill={!editing}
             onChange={(patch) => {
               setDraft((d) => ({ ...d, ...patch }));
               // 고친 칸의 오류 문구는 바로 지운다
