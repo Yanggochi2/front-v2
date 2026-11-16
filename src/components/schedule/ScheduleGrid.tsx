@@ -12,6 +12,7 @@ type Props = {
   selected: { row: number; col: number } | null;
   spotCol?: number | null; // 위반 목록에서 고른 날. 그 열을 옅은 빨강으로 짚어 준다
   painting?: boolean; // 칸 바꾸기(브러시)를 고른 상태. 누르면 바로 바뀌는 칸임을 커서로 알린다
+  picked?: ReadonlySet<string>; // 강제 OFF로 고른 칸 ("행 index:열"). 있으면 칸을 누를 때 고르기/풀기가 된다
   onCellClick?: (row: number, col: number, el: HTMLElement) => void; // 없으면 보기 전용
   onScroll: () => void;
   checkColumn?: boolean; // 주간 오른쪽의 "확인 필요" 열. 확인할 일이 없는 공유 화면은 false
@@ -60,7 +61,7 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
   return starts;
 }
 
-export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, onCellClick, onScroll, checkColumn = true }: Props) {
+export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, picked, onCellClick, onScroll, checkColumn = true }: Props) {
   const isMonth = view === "month";
   const nameW = isMonth ? "w-[152px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
@@ -161,6 +162,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                 </th>
                 {row.cells.map((cell, col) => {
                   const isSelected = selected?.row === index && selected.col === col;
+                  const isPicked = picked?.has(`${index}:${col}`) ?? false;
                   const editable = !!onCellClick && cell.editable !== false;
                   const day = days[col];
                   const style = cell.duty ? DUTY_STYLE[cell.duty] : null;
@@ -186,10 +188,11 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                         type="button"
                         disabled={!editable}
                         data-cell={`${index}:${col}`}
+                        aria-pressed={picked ? isPicked : undefined}
                         onClick={(e) => onCellClick?.(index, col, e.currentTarget)}
                         aria-label={`${row.name} ${day.date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}`}
                         className={`group/cell flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default ${
-                          painting ? "enabled:cursor-crosshair" : "enabled:cursor-pointer"
+                          painting || picked ? "enabled:cursor-crosshair" : "enabled:cursor-pointer"
                         } ${tile.radius}`}
                       >
                         {/* 빈 칸(미배정)은 고칠 수 있을 때만 점선 타일로 보여 준다. 소속 기간 밖처럼 못 고치는 칸은 비워 둔다. */}
@@ -211,6 +214,12 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                           ) : null}
                           {cell.flag === "violation" ? (
                             <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-danger ring-inset" />
+                          ) : null}
+                          {/* 강제 OFF로 고른 칸: 버건디 테두리 + 옅은 덮개 + 체크. 근무 색 위에서도 보이도록 테두리를 굵게 */}
+                          {isPicked ? (
+                            <span aria-hidden className="pointer-events-none absolute -inset-px flex items-start justify-start rounded-[inherit] bg-primary/15 ring-[3px] ring-primary ring-inset">
+                              <span className="m-px flex size-3.5 items-center justify-center rounded-full bg-primary text-[10px] leading-none font-bold text-white">✓</span>
+                            </span>
                           ) : null}
                           {isSelected ? (
                             <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-primary ring-inset" />

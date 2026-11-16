@@ -67,6 +67,8 @@ export type ApiSchedule = {
 // SCH-04. 소속 기간 밖 칸은 서버가 거절한다.
 export type ApiCellChange = { nurseId: string; date: string; dutyCode: ApiDutyCode | null };
 export type ApiCellBulkPatch = { baseVersion: number; changes: ApiCellChange[] };
+// 강제 OFF (7차 미팅). 고른 칸을 모두 O로 바꾼다. 위반은 막지 않고 응답에 그대로 온다.
+export type ApiForceOffRequest = { baseVersion: number; reason?: string; cells: { nurseId: string; date: string }[] };
 export type ApiCellBulkPatchResult = {
   changedCells: ApiScheduleCell[];
   version: number;

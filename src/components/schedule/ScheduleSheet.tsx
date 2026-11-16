@@ -8,10 +8,11 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleChip from "@/components/ui/ScheduleChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
-import { useScheduleEditor } from "@/hooks/useScheduleEditor";
+import { type CellPos, useScheduleEditor } from "@/hooks/useScheduleEditor";
 import { compareNurses } from "@/lib/nurseSort";
 import type { EditableDutyCode, ScheduleIssue, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
+import ForcedOffBar from "./ForcedOffBar";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
@@ -65,12 +66,23 @@ const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
 };
 const OFFLINE_NOTE = "서버에 연결되면 고칠 수 있어요";
 
+// 사유 입력칸에서 누른 Esc는 강제 OFF 모드를 끄지 않는다.
+function isTypingTarget(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+}
+
 // 로그인한 수간호사의 근무표 화면. 간호사는 공유 링크로 확정본만 본다 (10/26 계약).
 export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const router = useRouter();
   const editor = useScheduleEditor(sheet);
   const { rows, setDuty } = editor;
   const [brush, setBrush] = useState<EditableDutyCode | null>(null);
+  // 강제 OFF 지정 모드와 고른 칸 ("행 index:열" → 위치). 칸 바꾸기(브러시)와 동시에 켜지지 않는다.
+  const [offPick, setOffPick] = useState(false);
+  const [picked, setPicked] = useState<Map<string, CellPos>>(new Map());
+  const [forceBusy, setForceBusy] = useState(false);
+  const [forceNotice, setForceNotice] = useState<string | null>(null);
   const [checkOnly, setCheckOnly] = useState(false);
   const [sort, setSort] = useState<ScheduleRowSort>(sheet.defaultSort);
   const [popover, setPopover] = useState<Popover | null>(null);
@@ -82,7 +94,9 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const editable = api.editable;
   const hint = !editable
     ? undefined
-    : brush
+    : offPick
+      ? undefined
+      : brush
       ? `${BRUSH_HINT[brush]}. Esc를 누르면 멈춰요`
       : "칸을 누르면 근무를 고를 수 있어요. 바꾸면 바로 저장돼요";
   const names = useMemo(() => new Map(rows.map((r) => [r.nurseKey, r.name])), [rows]);
@@ -152,7 +166,67 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
     setPopover({ row, col, left: left / f, above, top: (above ? rect.top - 8 * f : rect.bottom + 8 * f) / f });
   }
 
+  function changeBrush(code: EditableDutyCode | null) {
+    setBrush(code);
+    if (code) stopOffPick();
+  }
+
+  function changeOffPick(on: boolean) {
+    if (!on) return stopOffPick();
+    setBrush(null);
+    closePopover();
+    setForceNotice(null);
+    setOffPick(true);
+  }
+
+  function stopOffPick() {
+    setOffPick(false);
+    setPicked(new Map());
+    setForceNotice(null);
+  }
+
+  // 이미 OFF인 칸은 바꿀 게 없어 고르지 않는다.
+  function togglePick(row: number, col: number) {
+    if (rows[row].cells[col].duty === "O") return;
+    const key = `${row}:${col}`;
+    setForceNotice(null);
+    setPicked((prev) => {
+      const next = new Map(prev);
+      if (!next.delete(key)) next.set(key, { row, col });
+      return next;
+    });
+  }
+
+  async function submitForceOff(reason: string) {
+    const cells = [...picked.values()];
+    setForceBusy(true);
+    const ok = await editor.forceOff(cells, reason);
+    setForceBusy(false);
+    if (ok) {
+      setPicked(new Map());
+      setForceNotice(`${cells.length}칸을 OFF로 지정했어요. 인원 부족 같은 문제가 생겼다면 위반 목록에서 볼 수 있어요`);
+    }
+    return ok;
+  }
+
+  // 강제 OFF 지정 중에는 Esc로 그만둔다.
+  useEffect(() => {
+    if (!offPick) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || isTypingTarget(e.target)) return;
+      setOffPick(false);
+      setPicked(new Map());
+      setForceNotice(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [offPick]);
+
   function handleCellClick(row: number, col: number, el: HTMLElement) {
+    if (offPick) {
+      togglePick(row, col);
+      return;
+    }
     if (brush) {
       setDuty(row, col, brush);
       closePopover();
@@ -285,7 +359,9 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               editable={editable}
               readOnlyNote={READONLY_NOTE[api.status] ?? OFFLINE_NOTE}
               brush={brush}
-              onBrushChange={setBrush}
+              onBrushChange={changeBrush}
+              offPick={offPick}
+              onOffPickChange={changeOffPick}
               canUndo={editor.canUndo}
               onUndo={editor.undo}
               canRedo={editor.canRedo}
@@ -311,6 +387,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               selected={popover ? { row: popover.row, col: popover.col } : sheet.selectedCell}
               spotCol={spotCol}
               painting={!!brush}
+              picked={offPick ? new Set(picked.keys()) : undefined}
               onCellClick={editable ? handleCellClick : undefined}
               onScroll={closePopover}
             />
@@ -348,6 +425,18 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
+            {offPick ? (
+              <div className="min-w-0 flex-1">
+                <ForcedOffBar
+                  count={picked.size}
+                  busy={forceBusy}
+                  notice={forceNotice}
+                  onSubmit={submitForceOff}
+                  onClear={() => setPicked(new Map())}
+                  onClose={stopOffPick}
+                />
+              </div>
+            ) : null}
             {hint ? (
               <p className={`text-[15px] print:hidden ${brush ? "font-bold text-primary" : "font-medium text-ink-mute"}`}>{hint}</p>
             ) : null}
