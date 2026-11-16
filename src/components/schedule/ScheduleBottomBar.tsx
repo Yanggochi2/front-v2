@@ -65,7 +65,6 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
               size="sm"
               onClick={() => open("regenerate")}
               disabled={offline}
-              className="disabled:opacity-50"
             >
               자동으로 다시 짜기
             </ScheduleButton>
@@ -74,7 +73,6 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
               size="sm"
               onClick={() => open("confirm")}
               disabled={offline || blocked}
-              className="disabled:opacity-50"
             >
               확정하기
             </ScheduleButton>

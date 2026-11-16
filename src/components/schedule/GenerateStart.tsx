@@ -78,7 +78,6 @@ export default function GenerateStart({ yearMonth, draft, locked, offTarget }: P
             size="bar"
             onClick={() => start(yearMonth, keepEntered)}
             disabled={loading || locked}
-            className="disabled:opacity-50"
           >
             {loading ? "만드는 중…" : "자동 생성 시작"}
           </ScheduleButton>

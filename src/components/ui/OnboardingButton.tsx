@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type Variant = "primary" | "secondary";
 
 const base =
-  "inline-flex h-14 items-center justify-center rounded-xl px-7 text-lg font-bold whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-14 items-center justify-center rounded-xl px-7 text-lg font-bold whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:bg-surface disabled:text-ink-mute";
 const variants: Record<Variant, string> = {
   primary: "bg-primary text-white",
   secondary: "bg-surface text-ink-sub",

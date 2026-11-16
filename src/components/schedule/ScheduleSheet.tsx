@@ -337,7 +337,6 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
                     size="sm"
                     onClick={() => generation.start(sheet.yearMonth)}
                     disabled={generation.loading}
-                    className="disabled:opacity-50"
                   >
                     {generation.loading ? "만드는 중…" : "자동 생성"}
                   </ScheduleButton>

@@ -37,7 +37,7 @@ export default function ScheduleShareButtons({ scheduleId, yearMonth, canExport 
   return (
     <div className="flex items-center gap-2 print:hidden">
       {canExport ? (
-        <ScheduleButton variant="neutral" size="xs" onClick={saveExcel} disabled={busy || !scheduleId} className="disabled:opacity-50">
+        <ScheduleButton variant="neutral" size="xs" onClick={saveExcel} disabled={busy || !scheduleId}>
           {busy ? "저장 중…" : "엑셀로 저장"}
         </ScheduleButton>
       ) : null}
