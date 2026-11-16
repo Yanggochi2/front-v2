@@ -16,6 +16,8 @@ type Props = {
   onCellClick?: (row: number, col: number, el: HTMLElement) => void; // 없으면 보기 전용
   onScroll: () => void;
   checkColumn?: boolean; // 주간 오른쪽의 "확인 필요" 열. 확인할 일이 없는 공유 화면은 false
+  // 이름으로 찾은 사람(nurseKey). 하나라도 있으면 그 줄을 진하게, 나머지 줄은 흐리게 보여 준다 (공유 화면, 11/16 미팅)
+  focusRows?: ReadonlySet<string>;
 };
 
 const DAY_TEXT = { default: "text-ink", sat: "text-brand", sun: "text-danger", holiday: "text-danger" } as const;
@@ -61,7 +63,7 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
   return starts;
 }
 
-export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, picked, onCellClick, onScroll, checkColumn = true }: Props) {
+export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, picked, onCellClick, onScroll, checkColumn = true, focusRows }: Props) {
   const isMonth = view === "month";
   const nameW = isMonth ? "w-[152px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
@@ -77,6 +79,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
   const showRemaining = rows.some(({ row }) => row.offTarget !== undefined);
   // 월간: 이름 옆에는 남은 OFF(목표가 있을 때만), 맨 오른쪽 고정 열에는 그 달 총 OFF 수
   const remainingBeside = isMonth && showRemaining;
+  const focusing = !!focusRows && focusRows.size > 0;
   const tableMaxPx = HEAD_PX + (coverage ? COVERAGE_ROWS.length * COVERAGE_ROW_PX[view] : 0) + rows.length * MAX_ROW_PX[view];
 
   return (
@@ -137,11 +140,16 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
           {rows.map(({ row, index }, i) => {
             const start = starts.get(i);
             const groupTop = start ? "border-t-2 border-t-primary" : "";
+            const focused = focusing && focusRows.has(row.nurseKey);
+            // 흐리게는 칸 안의 글자·타일에만 건다. 고정 열(이름·총 OFF)에 투명도를 주면 가로 스크롤 때 뒤가 비친다.
+            const dim = focusing && !focused;
             return (
-              <tr key={row.nurseKey} className="group">
+              <tr key={row.nurseKey} className="group" data-focus-row={focused || undefined}>
                 <th
                   scope="row"
-                  className={`sticky left-0 z-10 border-r border-b border-line bg-white text-left leading-tight text-[20px] font-bold text-ink transition-colors group-hover:bg-primary-soft ${isMonth ? "[@media(max-height:820px)]:text-[17px] [@media(max-height:820px)]:leading-none" : ""} ${nameW} ${rowH} ${groupTop} pl-4`}
+                  className={`sticky left-0 z-10 border-r border-b border-line text-left leading-tight text-[20px] font-bold transition-colors group-hover:bg-primary-soft ${
+                    focused ? "bg-primary-soft text-primary shadow-[inset_4px_0_0_var(--color-primary)]" : dim ? "bg-white text-ink-faint print:text-ink" : "bg-white text-ink"
+                  } ${isMonth ? "[@media(max-height:820px)]:text-[17px] [@media(max-height:820px)]:leading-none" : ""} ${nameW} ${rowH} ${groupTop} pl-4`}
                 >
                   {start ? (
                     // 낮은 화면의 월간은 행 높이가 모자라 그룹 이름을 숨기고 굵은 윗선으로만 구분한다
@@ -179,6 +187,8 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       className={`relative border-r border-b border-line transition-colors ${tile.pad} ${rowH} ${groupTop} ${
                         spotCol === col
                           ? "bg-danger-soft"
+                          : focused
+                            ? "bg-primary-soft"
                           : day.isToday
                             ? "bg-primary-soft"
                             : `${EMPTY_BG[day.tone]} group-hover:bg-primary-soft/40`
@@ -197,7 +207,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                       >
                         {/* 빈 칸(미배정)은 고칠 수 있을 때만 점선 타일로 보여 준다. 소속 기간 밖처럼 못 고치는 칸은 비워 둔다. */}
                         <span
-                          className={`relative flex h-full items-center justify-center gap-1.5 leading-none transition-[filter,background-color,border-color] duration-100 ${tile.shape} ${tile.radius} ${labelSize} ${
+                          className={`relative flex h-full items-center justify-center gap-1.5 leading-none transition-[filter,background-color,border-color] duration-100 ${dim ? "opacity-35 print:opacity-100" : ""} ${tile.shape} ${tile.radius} ${labelSize} ${
                             style
                               ? `${style.cell} ${style.ring} ${editable ? "group-hover/cell:brightness-95" : ""}`
                               : editable
@@ -236,7 +246,9 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                   );
                 })}
                 {isMonth ? (
-                  <td className={`sticky right-0 z-10 border-b border-line bg-white text-center text-[20px] leading-none font-bold text-ink-sub transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${rowH} ${groupTop}`}>
+                  <td className={`sticky right-0 z-10 border-b border-line text-center text-[20px] leading-none font-bold transition-colors group-hover:bg-primary-soft [@media(max-height:820px)]:text-[17px] ${
+                    focused ? "bg-primary-soft text-primary" : dim ? "bg-white text-ink-faint print:text-ink-sub" : "bg-white text-ink-sub"
+                  } ${rowH} ${groupTop}`}>
                     <TotalOff row={row} />
                   </td>
                 ) : checkColumn ? (
