@@ -10,6 +10,9 @@ type Props = {
   readOnlyNote: string;
   brush: EditableDutyCode | null;
   onBrushChange: (code: EditableDutyCode | null) => void;
+  // 강제 OFF 지정 모드 (7차 미팅). 켜면 칸을 눌러 여러 칸을 고르고, 아래 막대에서 한 번에 OFF로 바꾼다
+  offPick: boolean;
+  onOffPickChange: (value: boolean) => void;
   canUndo: boolean;
   onUndo: () => void;
   canRedo: boolean;
@@ -70,6 +73,8 @@ export default function ScheduleToolbar({
   readOnlyNote,
   brush,
   onBrushChange,
+  offPick,
+  onOffPickChange,
   canUndo,
   onUndo,
   canRedo,
@@ -123,6 +128,23 @@ export default function ScheduleToolbar({
             </button>
           );
         })}
+        <span aria-hidden className="mx-1 h-6 w-px bg-line" />
+        <button
+          type="button"
+          aria-pressed={offPick}
+          onClick={() => onOffPickChange(!offPick)}
+          title="여러 칸을 골라 한 번에 OFF로 지정해요"
+          className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+            offPick
+              ? "bg-primary text-white shadow-[0_2px_8px_rgb(25_31_40/0.12)]"
+              : "border border-line bg-white text-ink-sub hover:border-grid hover:text-ink"
+          }`}
+        >
+          <span aria-hidden className={`flex size-4 items-center justify-center rounded-[5px] border text-[11px] leading-none ${offPick ? "border-white" : "border-grid"}`}>
+            ✓
+          </span>
+          OFF 지정
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {sortControl}

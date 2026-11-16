@@ -3,6 +3,7 @@ import { monthDates, resolvePeriod, todayKst, weekCountOf } from "@/lib/schedule
 import type {
   ApiCellBulkPatch,
   ApiCellBulkPatchResult,
+  ApiForceOffRequest,
   ApiConfirmCancelRequest,
   ApiConfirmRequest,
   ApiCoverage,
@@ -277,6 +278,16 @@ async function getAllHardViolations(scheduleId: string): Promise<ApiViolation[]>
 // 잠금 토큰은 P2(잠금 기능)에서 넘긴다.
 export function patchScheduleCells(scheduleId: string, body: ApiCellBulkPatch, scheduleLockToken?: string) {
   return apiRequest<ApiCellBulkPatchResult>(`${SCHEDULES}/${scheduleId}/cells`, {
+    method: "PATCH",
+    body,
+    scheduleLockToken,
+  });
+}
+
+// 강제 OFF (backend #92, docs/client-1113-api.md). 초안·수간호사 전용, 응답은 칸 변경(SCH-04)과 같은 모양이다.
+// 인원 부족 같은 위반이 생겨도 막지 않고 violations로 돌려준다. 감사 로그에는 FORCED_OFF_ASSIGNED로 남는다.
+export function forceScheduleOffs(scheduleId: string, body: ApiForceOffRequest, scheduleLockToken?: string) {
+  return apiRequest<ApiCellBulkPatchResult>(`${SCHEDULES}/${scheduleId}/forced-offs`, {
     method: "PATCH",
     body,
     scheduleLockToken,
