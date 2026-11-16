@@ -24,6 +24,7 @@ const MESSAGES: Record<string, string> = {
   UNRESOLVED_MAPPING: "아직 정하지 않은 줄이나 글자가 있어요. 모두 골라 주세요.",
   INVALID_MAPPING: "고른 내용을 근무표에 맞출 수 없어요. 파일을 다시 올려 주세요.",
   PREVIEW_NOT_FOUND: "올린 파일을 찾을 수 없어요. 다시 올려 주세요.",
+  NO_ACTIVE_NURSES: "재직 중인 간호사가 없어요. 간호사를 먼저 등록해 주세요.",
   INTERNAL_ERROR: "서버에 문제가 생겼어요. 잠시 후에 다시 해 주세요.",
 };
 
