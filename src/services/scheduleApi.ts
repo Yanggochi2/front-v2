@@ -7,7 +7,10 @@ import type {
   ApiConfirmCancelRequest,
   ApiConfirmRequest,
   ApiCoverage,
+  ApiImportMappingPatch,
+  ApiImportPreview,
   ApiSchedule,
+  ApiScheduleWithViolations,
   ApiViolation,
   ApiViolationQuery,
 } from "@/types/scheduleApi.type";
@@ -310,5 +313,28 @@ export function exportScheduleXlsx(scheduleId: string): Promise<Blob> {
   return apiRequestBlob(`${SCHEDULES}/${scheduleId}/export.xlsx`);
 }
 
-// TODO: SCH-10~15 (가져오기, 편집 잠금)는 2순위라 아직 만들지 않는다.
+// SCH-10. 엑셀 파일(첫 열 이름, 머리글에 날짜 1~31)을 읽어 미리보기를 만든다. 근무표는 아직 바뀌지 않는다.
+// 422 INVALID_EXCEL_FORMAT, 413 FILE_TOO_LARGE는 ApiError로 던진다.
+export function createImportPreview(scheduleId: string, file: File): Promise<ApiImportPreview> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiRequest<ApiImportPreview>(`${SCHEDULES}/${scheduleId}/import-previews`, { method: "POST", formData });
+}
+
+// SCH-11. 이름이 맞지 않는 줄을 누구로 볼지, 모르는 글자를 어떤 근무로 볼지 정한다.
+export function patchImportPreview(scheduleId: string, previewId: string, body: ApiImportMappingPatch): Promise<ApiImportPreview> {
+  return apiRequest<ApiImportPreview>(`${SCHEDULES}/${scheduleId}/import-previews/${previewId}`, { method: "PATCH", body });
+}
+
+// SCH-12. 미리보기를 근무표에 넣는다. 화면의 수정은 바로 저장되므로 서버의 최신 버전을 기준으로 보낸다.
+// 연차 칸과 소속 기간 밖 칸은 서버가 그대로 둔다. 422 UNRESOLVED_MAPPING, 409 VERSION_CONFLICT는 ApiError로 던진다.
+export async function applyImportPreview(scheduleId: string, previewId: string): Promise<ApiScheduleWithViolations> {
+  const { version } = await getScheduleById(scheduleId);
+  return apiRequest<ApiScheduleWithViolations>(`${SCHEDULES}/${scheduleId}/import-previews/${previewId}/apply`, {
+    method: "POST",
+    body: { baseVersion: version },
+  });
+}
+
+// TODO: SCH-13~15 (편집 잠금)는 2순위라 아직 만들지 않는다.
 

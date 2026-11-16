@@ -16,6 +16,7 @@ import ForcedOffBar from "./ForcedOffBar";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
+import ScheduleImportButton from "./ScheduleImportButton";
 import ScheduleIssues from "./ScheduleIssues";
 import ScheduleLegend from "./ScheduleLegend";
 import ScheduleShareButtons from "./ScheduleShareButtons";
@@ -336,6 +337,13 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               )}
             </div>
             <div className="ml-auto flex items-center gap-3 print:hidden">
+              {editable ? (
+                <ScheduleImportButton
+                  scheduleId={api.scheduleId}
+                  monthLabel={`${Number(sheet.yearMonth.slice(5))}월`}
+                  nurses={rows.map((r) => ({ id: r.nurseKey, name: r.name }))}
+                />
+              ) : null}
               <ScheduleShareButtons scheduleId={api.scheduleId} yearMonth={sheet.yearMonth} canExport />
               {/* 공유 링크는 확정·지난 근무표에만 만들 수 있다. 작성 중에는 버튼을 막아 두고 이유를 알려 준다 */}
               <ScheduleShareLink scheduleId={api.scheduleId} shareable={api.status === "CONFIRMED" || api.status === "ARCHIVED"} />
