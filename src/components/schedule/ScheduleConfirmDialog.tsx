@@ -75,7 +75,6 @@ export default function ScheduleConfirmDialog({
             size="sm"
             onClick={() => onConfirm(reason.trim())}
             disabled={busy || (needsReason && reason.trim() === "")}
-            className="disabled:opacity-50"
           >
             {confirmLabel}
           </ScheduleButton>
