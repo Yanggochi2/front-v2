@@ -6,7 +6,7 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleToggle from "@/components/ui/ScheduleToggle";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useSubmit } from "@/hooks/useSubmit";
-import { cancelScheduleConfirmation, confirmSchedule, getScheduleViolations } from "@/services/scheduleApi";
+import { cancelScheduleConfirmation, confirmSchedule, getAllViolations } from "@/services/scheduleApi";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleConfirmDialog from "./ScheduleConfirmDialog";
 
@@ -43,9 +43,10 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
     const ok = await submit(() =>
       dialog.kind === "confirm"
         ? // 확정 창에서 확정하는 것을 남은 소프트 위반 전체를 확인한 것으로 본다 (백엔드는 미확인 위반이 있으면 409).
+          // 권장 규칙 위반이 100건을 넘어도 빠짐없이 보내야 한다 (11/16 미팅: 위반 표시가 없는데 확정이 안 되던 원인).
           // TODO: 위반을 하나씩 확인하는 목록 UI는 시안 확정 후
-          getScheduleViolations(scheduleId, { severity: "SOFT", size: 100 }).then(({ data }) =>
-            confirmSchedule(scheduleId, { acknowledgedSoftViolationIds: data.map((v) => v.id) }, dialog.key),
+          getAllViolations(scheduleId, "SOFT").then((soft) =>
+            confirmSchedule(scheduleId, { acknowledgedSoftViolationIds: soft.map((v) => v.id) }, dialog.key),
           )
         : cancelScheduleConfirmation(scheduleId, { reason }),
     );

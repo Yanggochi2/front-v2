@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_STAFFING: "하루 필요 인원을 다시 확인해 주세요.",
   REASON_REQUIRED: "사유를 입력해 주세요.",
   HARD_VIOLATIONS_EXIST: "규칙 위반을 먼저 고쳐 주세요.",
+  SOFT_VIOLATIONS_UNACKNOWLEDGED: "그사이 근무표가 바뀌었어요. 새로고침한 뒤 다시 확정해 주세요.",
   INVALID_SCHEDULE_STATE: "근무표 상태가 바뀌었어요. 새로고침해 주세요.",
   // 서버 코드가 아니라 자동 생성 시작 전에 프론트가 확정본을 걸러 낼 때 쓴다 (generationApi)
   SCHEDULE_CONFIRMED: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요.",
