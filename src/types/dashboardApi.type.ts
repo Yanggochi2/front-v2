@@ -1,9 +1,6 @@
 // GET /wards/me/dashboard?yearMonth=YYYY-MM (수간호사 전용). 11/13 계약(백엔드 docs/client-1113-api.md "대시보드") 기준.
 import type { ApiCoverage, ApiDutyCode, ScheduleStatus } from "./scheduleApi.type";
-import type { ApiNurseStatus } from "./nursesApi.type";
-
-// 직종. 간호사 관리 브랜치(feature/nursing-assistant)의 nursesApi.type ApiStaffType과 같은 값
-export type ApiStaffType = "NURSE" | "NURSING_ASSISTANT";
+import type { ApiNurseStatus, ApiStaffType } from "./nursesApi.type";
 
 export type ApiDashboard = {
   yearMonth: string;
