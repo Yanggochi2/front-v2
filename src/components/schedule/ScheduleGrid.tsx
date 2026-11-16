@@ -300,12 +300,18 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
 const countOffs = (row: ScheduleRow) => row.cells.filter((c) => c.duty === "O").length;
 
 // 남은 OFF = max(OFF 목표 - 넣은 O, 0). 백엔드 statistics.remainingOff와 같은 식이다. 이름 칸 옆에 둔다.
+// 지난달에서 넘어온 OFF(이월)가 있으면 숫자 뒤에 "+이월"을 작게 붙인다 (목표에 이미 들어 있음).
 function RemainingOff({ row }: { row: ScheduleRow }) {
   const offs = countOffs(row);
   if (row.offTarget === undefined) return <>{offs}</>;
+  const carry = row.offCarry ?? 0;
+  const title = carry > 0
+    ? `OFF ${offs}개 넣음 · 목표 ${row.offTarget}개 (지난달 이월 ${carry}개 포함)`
+    : `OFF ${offs}개 넣음 · 목표 ${row.offTarget}개`;
   return (
-    <span title={`OFF ${offs}개 넣음 · 목표 ${row.offTarget}개`} className={offs > row.offTarget ? "text-danger" : ""}>
+    <span title={title} className={offs > row.offTarget ? "text-danger" : ""}>
       {Math.max(row.offTarget - offs, 0)}
+      {carry > 0 ? <sup className="ml-px text-[11px] font-bold text-primary">+{carry}</sup> : null}
     </span>
   );
 }

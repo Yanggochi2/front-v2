@@ -352,7 +352,12 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               <p className={`text-[15px] print:hidden ${brush ? "font-bold text-primary" : "font-medium text-ink-mute"}`}>{hint}</p>
             ) : null}
             <div className="ml-auto">
-              <ScheduleLegend isMonth={isMonth} canManage={editable} hasToday={sheet.days.some((d) => d.isToday)} />
+              <ScheduleLegend
+                isMonth={isMonth}
+                canManage={editable}
+                hasToday={sheet.days.some((d) => d.isToday)}
+                hasCarry={isMonth && rows.some((r) => (r.offCarry ?? 0) > 0)}
+              />
             </div>
           </div>
         </section>
