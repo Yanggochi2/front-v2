@@ -11,8 +11,9 @@ const isWholeNumber = (v: string) => /^\d+$/.test(v.trim());
 // 경력 몇 개월까지 신입으로 보고 숙련도를 1~2로 묶는지 (7차 미팅, 11/13 계약)
 export const NEW_CAREER_MAX_MONTHS = 3;
 
-// 입사 월은 받지 않으므로, 입사 연도로 가능한 총 경력(개월) 범위. 백엔드 nurses.experience_values와 같은 식이다.
+// 입사 월은 받지 않으므로, 입사 연도로 본 이 병원 근무 기간(개월). 백엔드 nurses.experience_values와 같은 식이다.
 // 최대: 그해 1월 입사, 최소: 그해 12월 입사 (올해 입사면 0).
+// 총 경력은 최소보다 짧을 수 없지만, 다른 병원 경력이 더해질 수 있어 최대보다 긴 것은 막지 않는다 (11/16 미팅).
 export function careerRange(joinedYear: number): { min: number; max: number } {
   const { yearMonth } = todayKst();
   const year = Number(yearMonth.slice(0, 4));
@@ -73,10 +74,10 @@ export function validateNurseDraft(d: NurseDraft, initial?: NurseDraft): NurseDr
   if (!isWholeNumber(years) || !isWholeNumber(months) || Number(months) > 11)
     errors.career = "총 경력은 0년 이상, 개월은 0~11 사이로 넣어 주세요.";
   else if (!errors.hireYear && (!initial || EXPERIENCE_KEYS.some((k) => d[k] !== initial[k]))) {
-    // 입사 연도와 맞지 않는 경력은 서버도 400으로 막는다 (7차 미팅)
-    const { min, max } = careerRange(Number(d.hireYear));
+    // 입사한 지 오래됐는데 총 경력이 그보다 짧으면 막는다. 서버도 400으로 막는다 (11/16 미팅)
+    const { min } = careerRange(Number(d.hireYear));
     const total = draftCareerMonths(d);
-    if (total < min || total > max) errors.career = `${d.hireYear}년 입사면 경력은 ${monthsLabel(min)} ~ ${monthsLabel(max)} 사이예요.`;
+    if (total < min) errors.career = `${d.hireYear}년 입사면 총 경력은 ${monthsLabel(min)} 이상이에요. 다른 병원 경력은 더해서 넣어 주세요.`;
     else if (total <= NEW_CAREER_MAX_MONTHS && d.skill > 2) errors.skill = "경력 3개월 이하는 숙련도 1~2만 고를 수 있어요.";
   }
   if (!d.periodStart) errors.periodStart = "소속 시작일을 골라 주세요.";
