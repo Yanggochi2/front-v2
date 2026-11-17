@@ -96,6 +96,13 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   // 위반 목록에서 고른 날(열). 다음에 아무 데나 누르거나 Esc를 누르면 지운다.
   const [spotCol, setSpotCol] = useState<number | null>(null);
   const [showEmptyGuide, setShowEmptyGuide] = useState(sheet.unassigned);
+  // 빈 근무표 안내 카드 자리. 하단 인원 행(D/E/N 인원)을 가리지 않게 둔다.
+  // 표 아래에 빈 자리가 넉넉하면(간호사가 적은 병동) 그 가운데에 큰 카드로, 아니면 표 머리 바로 아래에 낮은 가로 카드로.
+  // null이면 아직 재지 않은 것 (처음 그릴 때 한 번)
+  const gridAreaRef = useRef<HTMLDivElement>(null);
+  const guideRef = useRef<HTMLDivElement>(null);
+  const guideBigHeight = useRef(0);
+  const [guide, setGuide] = useState<{ top: number; compact: boolean } | null>(null);
   const generation = useGenerationStart();
   const api = sheet.api;
   const editable = api.editable;
@@ -357,6 +364,29 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
     return checkOnly ? all.filter(({ row }) => row.needsCheck || row.cells.some((c) => c.flag)) : all;
   }, [rows, checkOnly, sort]);
 
+  // 표 높이와 영역 높이가 바뀔 때마다(창 크기, 보기 전환, 행 수) 카드 자리를 다시 정한다. ResizeObserver는 붙이자마자 한 번 부른다.
+  useEffect(() => {
+    if (!showEmptyGuide) return;
+    const area = gridAreaRef.current;
+    const table = area?.querySelector("table");
+    if (!area || !table) return;
+    const observer = new ResizeObserver(() => {
+      const card = guideRef.current;
+      if (!card) return;
+      // 큰 카드 높이는 큰 카드로 그려져 있을 때만 잰다 (처음에는 항상 큰 카드다)
+      if (card.dataset.compact !== "true") guideBigHeight.current = card.offsetHeight;
+      const free = area.clientHeight - table.offsetHeight;
+      setGuide(
+        free >= guideBigHeight.current + 32
+          ? { top: table.offsetHeight + (free - guideBigHeight.current) / 2, compact: false }
+          : { top: (table.tHead?.offsetHeight ?? 48) + 12, compact: true },
+      );
+    });
+    observer.observe(area);
+    observer.observe(table);
+    return () => observer.disconnect();
+  }, [showEmptyGuide]);
+
   const isMonth = sheet.view === "month";
   const period = { yearMonth: sheet.yearMonth, week: sheet.activeWeek };
   const prevHref = scheduleHref(sheet.view, movePeriod(period, sheet.view, -1));
@@ -452,7 +482,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               {editor.saveError}
             </p>
           ) : null}
-          <div className="relative min-h-0 flex-1 print:flex-none">
+          <div ref={gridAreaRef} className="relative min-h-0 flex-1 print:flex-none">
             <ScheduleGrid
               view={sheet.view}
               days={sheet.days}
@@ -473,18 +503,31 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               </p>
             ) : null}
             {showEmptyGuide ? (
-              <div className="absolute top-1/3 left-1/2 flex w-[min(432px,calc(100%-2rem))] print:hidden -translate-x-1/2 flex-col items-center gap-3 rounded-[24px] border border-line bg-white p-6 text-center shadow-pop">
-                <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
-                <p className="text-[22px] font-bold text-ink">아직 비어 있어요</p>
-                <p className="text-[16px] font-medium text-ink-sub">
-                  칸을 눌러 근무를 넣거나, 자동 생성으로 한 번에 채워요. 이미 짜 둔 근무표는 위의 ‘엑셀에서 가져오기’로 넣을 수 있어요.
-                </p>
-                {generation.error ? (
-                  <p role="alert" className="text-[16px] font-bold text-danger">
-                    {generation.error}
+              <div
+                ref={guideRef}
+                data-compact={guide?.compact || undefined}
+                style={guide ? { top: guide.top } : undefined}
+                className={`absolute left-1/2 flex -translate-x-1/2 rounded-[24px] border border-line bg-white shadow-pop print:hidden ${guide ? "" : "top-1/3"} ${
+                  guide?.compact
+                    ? "w-[min(760px,calc(100%-2rem))] items-center gap-4 px-5 py-4 text-left"
+                    : "w-[min(432px,calc(100%-2rem))] flex-col items-center gap-3 p-6 text-center"
+                }`}
+              >
+                {guide?.compact ? null : (
+                  <span aria-hidden className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-[26px] font-bold text-primary ring-8 ring-primary-soft/40">＋</span>
+                )}
+                <div className={guide?.compact ? "flex min-w-0 flex-1 flex-col gap-1" : "contents"}>
+                  <p className={`font-bold text-ink ${guide?.compact ? "text-[19px]" : "text-[22px]"}`}>아직 비어 있어요</p>
+                  <p className={`font-medium text-ink-sub ${guide?.compact ? "text-[15px]" : "text-[16px]"}`}>
+                    칸을 눌러 근무를 넣거나, 자동 생성으로 한 번에 채워요. 이미 짜 둔 근무표는 위의 ‘엑셀에서 가져오기’로 넣을 수 있어요.
                   </p>
-                ) : null}
-                <div className="flex gap-2">
+                  {generation.error ? (
+                    <p role="alert" className="text-[16px] font-bold text-danger">
+                      {generation.error}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 gap-2">
                   <ScheduleButton
                     variant="brand"
                     size="sm"
