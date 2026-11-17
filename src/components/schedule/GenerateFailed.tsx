@@ -42,6 +42,12 @@ export default function GenerateFailed({ data }: { data: GenerationFailure }) {
       ) : null}
       <div className="flex flex-wrap items-start gap-3">
         <GeneratePartialApplyButton jobId={data.jobId} yearMonth={data.yearMonth} />
+        {/* 인원 부족으로 실패했으면 대개 하루 필요 인원이 간호사 수에 비해 많다 (병동 만들기 기본값 D7·E5·N5) */}
+        {data.problems.some((p) => p.includes("인원 부족")) ? (
+          <ScheduleButton variant="neutral" size="sm" href="/ward-settings">
+            하루 필요 인원 고치기
+          </ScheduleButton>
+        ) : null}
         <ScheduleButton variant="neutral" size="sm" href={data.yearMonth ? `/schedule?view=month&ym=${data.yearMonth}` : "/schedule"}>
           취소
         </ScheduleButton>

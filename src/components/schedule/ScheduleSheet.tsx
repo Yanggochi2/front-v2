@@ -453,6 +453,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
                 yearMonth={sheet.yearMonth}
                 status={api.status}
                 hardViolationCount={editor.issues.length}
+                // 간호사가 없는 위반 = 그날 인원 부족 같은 병동 위반
+                staffShortage={editor.issues.some((i) => !i.nurseKey)}
                 // 넣어 둔 근무가 있고 빈 칸이 남아 있으면, 다시 짤 때 넣어 둔 칸을 지키는 쪽을 기본으로 한다
                 keepEnteredDefault={api.hasEnteredCells && api.hasEmptyCells}
               />
