@@ -106,6 +106,21 @@ export type ApiGenerationJob = {
   error?: string | null; // 실패(FAILED) 사유. 명세에는 없고 백엔드 응답에 있다
 };
 
+// SCH-10~12 근무표 엑셀 가져오기 (백엔드 excel.create_preview 응답). 올린 파일은 미리보기로만 저장되고, apply해야 근무표에 들어간다.
+export type ApiImportNurseMapping = { rowNumber: number; nurseId: string | null }; // null = 그 줄은 건너뜀
+export type ApiImportDutyMapping = { raw: string; dutyCode: ApiDutyCode | null }; // null = 빈 칸으로
+export type ApiImportPreview = {
+  id: string;
+  scheduleId: string;
+  status: "READY" | "APPLIED";
+  rows: { rowNumber: number; name: string; candidates: string[] }[]; // 엑셀의 간호사 줄. candidates: 이름이 같은 간호사 id
+  cells: { rowNumber: number; date: string; raw: string }[]; // 읽은 칸 (raw: 엑셀에 적힌 글자, 대문자)
+  nurseMappings: ApiImportNurseMapping[];
+  dutyMappings: ApiImportDutyMapping[];
+  unresolved: { rows: number[]; codes: string[] }; // 아직 누구인지·어떤 근무인지 정하지 못한 줄과 글자
+};
+export type ApiImportMappingPatch = { nurseMappings?: ApiImportNurseMapping[]; dutyMappings?: ApiImportDutyMapping[] };
+
 // 자동 생성 때 그대로 둘 칸. 근무 코드 없이 칸 위치만 보낸다 (10/26 계약 4장). AL·ED는 넣지 않아도 남는다.
 export type ApiFixedCell = { nurseId: string; date: string };
 

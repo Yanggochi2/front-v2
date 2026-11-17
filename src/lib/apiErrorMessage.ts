@@ -19,6 +19,12 @@ const MESSAGES: Record<string, string> = {
   // 서버 코드가 아니라 자동 생성 시작 전에 프론트가 확정본을 걸러 낼 때 쓴다 (generationApi)
   SCHEDULE_CONFIRMED: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요.",
   VERSION_CONFLICT: "다른 곳에서 수정됐어요. 새로고침해 주세요.",
+  INVALID_EXCEL_FORMAT: "엑셀 파일을 읽지 못했어요. 첫 열에 ‘이름’, 첫 줄에 날짜(1~31)가 있는 .xlsx 파일인지 확인해 주세요.",
+  FILE_TOO_LARGE: "파일이 너무 커요. 10MB보다 작은 파일을 올려 주세요.",
+  UNRESOLVED_MAPPING: "아직 정하지 않은 줄이나 글자가 있어요. 모두 골라 주세요.",
+  INVALID_MAPPING: "고른 내용을 근무표에 맞출 수 없어요. 파일을 다시 올려 주세요.",
+  PREVIEW_NOT_FOUND: "올린 파일을 찾을 수 없어요. 다시 올려 주세요.",
+  NO_ACTIVE_NURSES: "재직 중인 간호사가 없어요. 간호사를 먼저 등록해 주세요.",
   INTERNAL_ERROR: "서버에 문제가 생겼어요. 잠시 후에 다시 해 주세요.",
 };
 
