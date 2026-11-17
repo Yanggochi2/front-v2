@@ -1,6 +1,7 @@
 import AdminButton from "@/components/ui/AdminButton";
 import type { ReactNode } from "react";
 import RequiredStaffSection from "./RequiredStaffSection";
+import ShareCodeSection from "./ShareCodeSection";
 import type { WardSettingsData } from "@/types/ward.type";
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -41,6 +42,9 @@ export default function WardSettingsView({ ward }: { ward: WardSettingsData | nu
         ) : (
           <p className="text-[18px] leading-normal font-bold text-ink">-</p>
         )}
+      </Card>
+      <Card title="공유 링크 코드">
+        {ward ? <ShareCodeSection initialSet={ward.shareCodeSet} /> : <p className="text-[18px] leading-normal font-bold text-ink">-</p>}
       </Card>
     </>
   );

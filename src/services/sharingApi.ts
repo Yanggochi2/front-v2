@@ -13,6 +13,13 @@ export function issueShareLink(scheduleId: string): Promise<ShareLink> {
   return apiRequest<ShareLink>(scheduleShare(scheduleId), { method: "POST" });
 }
 
+// 공유 링크 코드 확인 (로그인 없이, backend#106). 맞으면 서버가 이 링크용 접근 쿠키(HttpOnly)를 준다.
+// 쿠키를 받아야 하므로 anonymous가 아니라 같은 출처 쿠키를 주고받는 일반 요청으로 보낸다.
+// 403 SHARE_CODE_INVALID, 429 RATE_LIMITED는 ApiError로 던진다.
+export function unlockSharedSchedule(token: string, code: string): Promise<void> {
+  return apiRequest<void>(`/shared/schedules/${encodeURIComponent(token)}/access`, { method: "POST", body: { code } });
+}
+
 // 공유 끄기. 확정을 취소해도 백엔드가 링크를 지운다.
 export function revokeShareLink(scheduleId: string): Promise<void> {
   return apiRequest<void>(scheduleShare(scheduleId), { method: "DELETE" });
@@ -38,6 +45,7 @@ export type SharedScheduleData = {
 export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string; q?: string; highlight?: string };
 
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
+// 병동에 공유 코드가 있는데 아직 맞히지 않았으면 401 SHARE_CODE_REQUIRED.
 // 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
 // q를 주면 이름에 검색어가 들어간 사람과 그 사람의 칸만 온다 (11/13 계약).
 // 보기를 고르지 않으면 서버 defaultView를 따른다. 주간은 수간호사 화면처럼 1일부터 7일씩 끊는다.

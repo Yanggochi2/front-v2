@@ -26,6 +26,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_MAPPING: "고른 내용을 근무표에 맞출 수 없어요. 파일을 다시 올려 주세요.",
   PREVIEW_NOT_FOUND: "올린 파일을 찾을 수 없어요. 다시 올려 주세요.",
   NO_ACTIVE_NURSES: "재직 중인 간호사가 없어요. 간호사를 먼저 등록해 주세요.",
+  SHARE_CODE_INVALID: "코드가 맞지 않아요. 수간호사에게 받은 코드를 다시 확인해 주세요.",
+  SHARE_CODE_REQUIRED: "공유 코드를 입력해 주세요.",
   INTERNAL_ERROR: "서버에 문제가 생겼어요. 잠시 후에 다시 해 주세요.",
 };
 
