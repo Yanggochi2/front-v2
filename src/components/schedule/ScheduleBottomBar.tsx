@@ -10,18 +10,19 @@ import { cancelScheduleConfirmation, confirmSchedule, getAllViolations, getSched
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleConfirmDialog from "./ScheduleConfirmDialog";
 
-type DialogKind = "confirm" | "cancel" | "regenerate";
+type DialogKind = "confirm" | "cancel" | "regenerate" | "blocked";
 
 type Props = {
   scheduleId: string; // 비어 있으면 서버에 연결하지 못한 상태
   yearMonth: string;
   status: ScheduleStatus;
   hardViolationCount: number; // 0보다 크면 확정 버튼을 막는다
+  staffShortage: boolean; // 남은 위반에 하루 인원 부족(병동 위반)이 있다. 막힌 이유를 알려 줄 때 병동 설정을 함께 안내한다
   keepEnteredDefault: boolean; // 다시 짜기 창의 "넣어 둔 칸 지키기" 처음 값
 };
 
 // 시트 아래 CTA. 화면 높이 안에 시트가 다 들어오도록 고정 배치 대신 흐름 안에 둔다.
-export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardViolationCount, keepEnteredDefault }: Props) {
+export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardViolationCount, staffShortage, keepEnteredDefault }: Props) {
   const router = useRouter();
   const { submit, loading, error, setError } = useSubmit();
   const generation = useGenerationStart();
@@ -77,14 +78,17 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
             >
               자동으로 다시 짜기
             </ScheduleButton>
-            <ScheduleButton
-              variant="primary"
-              size="sm"
-              onClick={() => open("confirm")}
-              disabled={offline || blocked}
+            {/* 막힌 확정 버튼은 회색으로 두되(11/13 미팅), 누르면 왜 막혔는지 알려 준다.
+                막힌 버튼은 pointer-events가 꺼져 있어 누르면 감싼 span이 받는다 */}
+            <span
+              className={blocked && !offline ? "cursor-pointer" : undefined}
+              title={blocked && !offline ? `필수 규칙 위반 ${hardViolationCount}건을 고쳐야 확정할 수 있어요` : undefined}
+              onClick={blocked && !offline ? () => open("blocked") : undefined}
             >
-              확정하기
-            </ScheduleButton>
+              <ScheduleButton variant="primary" size="sm" onClick={() => open("confirm")} disabled={offline || blocked}>
+                확정하기
+              </ScheduleButton>
+            </span>
           </>
         ) : null}
         {status === "CONFIRMED" ? (
@@ -106,6 +110,23 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
           {emptyCount ? (
             <p role="alert" className="rounded-[14px] bg-danger-soft px-4 py-3 text-[16px] font-bold text-danger">
               빈 칸이 {emptyCount}칸 남아 있어요. 그대로 확정하면 그 칸은 근무가 없는 채로 공유돼요. 먼저 채우려면 닫고 ‘자동으로 다시 짜기’를 눌러 주세요.
+            </p>
+          ) : null}
+        </ScheduleConfirmDialog>
+      ) : null}
+      {dialog?.kind === "blocked" ? (
+        <ScheduleConfirmDialog
+          title="아직 확정할 수 없어요"
+          description={`필수 규칙 위반이 ${hardViolationCount}건 남아 있어요. 모두 고쳐야 확정할 수 있어요. 위쪽 ‘규칙 위반 ${hardViolationCount}건’을 누르면 어디가 문제인지 보여요.`}
+          confirmLabel={staffShortage ? "병동 설정 열기" : "확인"}
+          busy={false}
+          error={null}
+          onConfirm={() => (staffShortage ? router.push("/ward-settings") : setDialog(null))}
+          onClose={() => setDialog(null)}
+        >
+          {staffShortage ? (
+            <p className="rounded-[14px] bg-canvas px-4 py-3 text-[16px] font-medium text-ink-sub">
+              날마다 인원이 모자라다면, 병동 설정의 <b className="text-ink">하루 필요 인원</b>이 간호사 수에 비해 많은지 확인해 주세요. 줄인 뒤 ‘자동으로 다시 짜기’를 누르면 돼요.
             </p>
           ) : null}
         </ScheduleConfirmDialog>
