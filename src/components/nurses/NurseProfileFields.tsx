@@ -132,7 +132,7 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
         </>
       )}
 
-      <Field label="총 경력" hint="입사 연도에 맞게 넣어 주세요" error={errors.career}>
+      <Field label="총 경력" hint="다른 병원 경력도 더해서 넣어 주세요" error={errors.career}>
         <div className="flex items-center gap-2.5">
           <input
             type="number"
