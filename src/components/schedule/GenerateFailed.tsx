@@ -17,7 +17,7 @@ export default function GenerateFailed({ data }: { data: GenerationFailure }) {
       </section>
       {data.problems.length > 0 ? (
         <section className="flex w-full flex-col gap-3 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
-          <h2 className="text-[20px] font-bold text-ink">남은 하드 위반</h2>
+          <h2 className="text-[20px] font-bold text-ink">지키지 못한 규칙</h2>
           <ul className="flex flex-col gap-1.5">
             {data.problems.map((m, i) => (
               <li key={`${i}-${m}`} className="text-[17px] font-medium text-ink-sub">

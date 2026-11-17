@@ -161,6 +161,22 @@ function toSteps(stage: unknown): GenerationStep[] {
   }));
 }
 
+// 해가 없을 때 백엔드가 주는 "지키지 못한 규칙" (job.conflicts). 명세에 모양이 없어, 메시지가 있는 항목만 골라 쓴다.
+// 누구의 어느 날인지 알 수 있게 이름과 날짜를 앞에 붙인다.
+function conflictMessages(conflicts: unknown, schedule: ApiSchedule): string[] {
+  if (!Array.isArray(conflicts)) return [];
+  const names = new Map(schedule.nurses.map((n) => [n.id, n.name]));
+  return conflicts.flatMap((c: unknown) => {
+    if (typeof c !== "object" || c === null) return [];
+    const { message, nurseId, date } = c as { message?: unknown; nurseId?: unknown; date?: unknown };
+    if (typeof message !== "string" || message === "") return [];
+    const who = typeof nurseId === "string" ? names.get(nurseId) : undefined;
+    const day = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${Number(date.slice(5, 7))}월 ${Number(date.slice(8))}일` : undefined;
+    const head = [who, day].filter(Boolean).join(" · ");
+    return [head ? `${head}: ${message}` : message];
+  });
+}
+
 // jobId는 진행 화면이 어느 작업인지 알려 준다 (?jobId=).
 export async function getGenerationProgress(jobId: string): Promise<GenerationProgress> {
   const job = await getGenerationJob(jobId);
@@ -181,23 +197,26 @@ export async function getGenerationProgress(jobId: string): Promise<GenerationPr
 export async function getGenerationFailure(jobId: string): Promise<GenerationFailure> {
   const job = await getGenerationJob(jobId);
   const schedule = await getScheduleById(job.scheduleId);
-  let problems: string[] = [];
-  try {
-    problems = (await getScheduleViolations(job.scheduleId, { severity: "HARD", size: 100 })).data.map((v) => v.message);
-  } catch {}
+  // 실패한 결과는 근무표에 쓰지 않으므로, 먼저 작업이 알려 준 "지키지 못한 규칙"을 보여 준다. 없으면 지금 근무표의 하드 위반.
+  let problems = conflictMessages(job.conflicts, schedule);
+  if (problems.length === 0) {
+    try {
+      problems = (await getScheduleViolations(job.scheduleId, { severity: "HARD", size: 100 })).data.map((v) => v.message);
+    } catch {}
+  }
   const noSolution = job.status === "NO_SOLUTION";
   return {
     jobId,
     yearMonth: schedule.yearMonth,
     title: noSolution ? "조건을 모두 맞추는 근무표를 찾지 못했어요" : "근무표를 만들지 못했어요",
-    subtitle: `${periodLabel(schedule.yearMonth)} · 남은 하드 위반 ${problems.length || job.hardViolationCount}건`,
+    subtitle: `${periodLabel(schedule.yearMonth)} · 지키지 못한 규칙 ${problems.length || job.hardViolationCount}건`,
     cause: {
       tag: "원인",
       headline: noSolution ? "지킬 수 없는 규칙이 있어요" : "생성 중에 문제가 생겼어요",
       detail:
         job.error ||
         (problems.length > 0
-          ? "아래 위반을 보고 규칙이나 인원을 조정한 뒤 다시 만들어 주세요."
+          ? "아래 내용을 보고 규칙이나 인원을 조정한 뒤 다시 만들어 주세요."
           : "규칙이나 인원을 조정한 뒤 다시 만들어 주세요."),
     },
     problems,
