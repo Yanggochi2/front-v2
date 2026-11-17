@@ -97,6 +97,32 @@ export async function startGenerationForMonth(yearMonth: string, idempotencyKey:
   return startGeneration(schedule.id, { fixedCells, maxSeconds: GENERATE_MAX_SECONDS }, idempotencyKey);
 }
 
+// 고른 칸만 다시 짠다 (11/16 미팅). 고른 칸을 뺀 나머지 근무는 모두 그대로 두도록 고정해서 보낸다.
+// 서버의 최신 근무표로 고정 칸을 만들므로 주간 보기에서 골라도 그 달 전체가 지켜진다. 빈 칸은 함께 채워진다.
+// changed: 고른 칸 중 근무가 실제로 바뀐 칸 수. 나머지가 모두 고정이라 같은 답이 나올 수 있어 화면에 알려 준다. 아직 끝나지 않았으면 null
+export async function startGenerationForCells(
+  scheduleId: string,
+  cells: ApiFixedCell[],
+  idempotencyKey: string,
+): Promise<{ job: ApiGenerationJob; changed: number | null }> {
+  const schedule = await getScheduleById(scheduleId);
+  if (schedule.status !== "DRAFT") {
+    throw new ApiError(409, { code: "SCHEDULE_CONFIRMED", message: "확정된 근무표는 확정을 취소한 뒤 다시 짤 수 있어요." });
+  }
+  const picked = new Set(cells.map((c) => `${c.nurseId}|${c.date}`));
+  const fixedCells = enteredCells(schedule).filter((c) => !picked.has(`${c.nurseId}|${c.date}`));
+  const before = new Map(schedule.cells.map((c) => [`${c.nurseId}|${c.date}`, c.dutyCode]));
+  const job = await startGeneration(schedule.id, { fixedCells, maxSeconds: GENERATE_MAX_SECONDS }, idempotencyKey);
+  if (job.status !== "SUCCEEDED") return { job, changed: null };
+  try {
+    const after = await getScheduleById(schedule.id);
+    return { job, changed: after.cells.filter((c) => picked.has(`${c.nurseId}|${c.date}`) && before.get(`${c.nurseId}|${c.date}`) !== c.dutyCode).length };
+  } catch {
+    // 결과는 이미 근무표에 들어갔다. 몇 칸이 바뀌었는지만 모른다
+    return { job, changed: null };
+  }
+}
+
 // 작업 상태별로 이동할 화면. 아직 진행 중이면 진행 화면.
 // 지금 백엔드는 요청 안에서 생성을 끝내므로 시작 응답이 바로 SUCCEEDED일 수 있다.
 export function generationHref(job: ApiGenerationJob, yearMonth: string): string {

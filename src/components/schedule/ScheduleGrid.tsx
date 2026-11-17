@@ -12,7 +12,9 @@ type Props = {
   selected: { row: number; col: number } | null;
   spotCol?: number | null; // 위반 목록에서 고른 날. 그 열을 옅은 빨강으로 짚어 준다
   painting?: boolean; // 칸 바꾸기(브러시)를 고른 상태. 누르면 바로 바뀌는 칸임을 커서로 알린다
-  picked?: ReadonlySet<string>; // 강제 OFF로 고른 칸 ("행 index:열"). 있으면 칸을 누를 때 고르기/풀기가 된다
+  picked?: ReadonlySet<string>; // 고르는 중인 칸 ("행 index:열", 강제 OFF·골라서 다시 짜기). 있으면 칸을 누를 때 고르기/풀기가 된다
+  // 칸 고르기 중 끌어서 여러 칸을 고를 때 쓴다. down: 칸에서 마우스를 누름, enter: 누른 채 다른 칸으로 들어옴
+  onCellPointer?: (row: number, col: number, phase: "down" | "enter") => void;
   onCellClick?: (row: number, col: number, el: HTMLElement) => void; // 없으면 보기 전용
   onScroll: () => void;
   checkColumn?: boolean; // 주간 오른쪽의 "확인 필요" 열. 확인할 일이 없는 공유 화면은 false
@@ -63,7 +65,7 @@ function groupStarts(rows: GridRow[]): Map<number, { name: string; count: number
   return starts;
 }
 
-export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, picked, onCellClick, onScroll, checkColumn = true, focusRows }: Props) {
+export default function ScheduleGrid({ view, days, rows, coverage, selected, spotCol = null, painting = false, picked, onCellPointer, onCellClick, onScroll, checkColumn = true, focusRows }: Props) {
   const isMonth = view === "month";
   const nameW = isMonth ? "w-[152px]" : "w-[151px]";
   // 월간: 28~30명이(수간호사 화면은 하단 인원 행까지) 24인치(브라우저 창 높이 약 940px) 한 화면에 들어오도록 최소 높이만 정하고,
@@ -85,7 +87,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
   return (
     <div onScroll={onScroll} className="absolute inset-0 overflow-auto rounded-[16px] border border-line print:static print:overflow-visible print:rounded-none">
       {/* 시트 전체가 화면 안에 들어오도록 표를 영역 크기에 맞춘다. 영역이 너무 작을 때만 안에서 스크롤한다. */}
-      <table style={{ height: `min(100%, ${tableMaxPx}px)` }} className="w-full table-fixed border-separate border-spacing-0">
+      <table style={{ height: `min(100%, ${tableMaxPx}px)` }} className={`w-full table-fixed border-separate border-spacing-0 ${picked ? "select-none" : ""}`}>
         <thead>
           <tr>
             <th
@@ -200,6 +202,8 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                         data-cell={`${index}:${col}`}
                         aria-pressed={picked ? isPicked : undefined}
                         onClick={(e) => onCellClick?.(index, col, e.currentTarget)}
+                        onPointerDown={onCellPointer ? (e) => e.button === 0 && onCellPointer(index, col, "down") : undefined}
+                        onPointerEnter={onCellPointer ? (e) => e.buttons === 1 && onCellPointer(index, col, "enter") : undefined}
                         aria-label={`${row.name} ${day.date}일 ${label || "미배정"}${cell.charge ? " 차지" : ""}`}
                         className={`group/cell flex size-full items-center justify-center focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default ${
                           painting || picked ? "enabled:cursor-crosshair" : "enabled:cursor-pointer"
@@ -225,7 +229,7 @@ export default function ScheduleGrid({ view, days, rows, coverage, selected, spo
                           {cell.flag === "violation" ? (
                             <span aria-hidden className="pointer-events-none absolute -inset-px rounded-[inherit] ring-[3px] ring-danger ring-inset" />
                           ) : null}
-                          {/* 강제 OFF로 고른 칸: 버건디 테두리 + 옅은 덮개 + 체크. 근무 색 위에서도 보이도록 테두리를 굵게 */}
+                          {/* 고른 칸(강제 OFF·골라서 다시 짜기): 버건디 테두리 + 옅은 덮개 + 체크. 근무 색 위에서도 보이도록 테두리를 굵게 */}
                           {isPicked ? (
                             <span aria-hidden className="pointer-events-none absolute -inset-px flex items-start justify-start rounded-[inherit] bg-primary/15 ring-[3px] ring-primary ring-inset">
                               <span className="m-px flex size-3.5 items-center justify-center rounded-full bg-primary text-[10px] leading-none font-bold text-white">✓</span>

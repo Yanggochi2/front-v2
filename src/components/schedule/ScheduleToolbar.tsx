@@ -10,9 +10,10 @@ type Props = {
   readOnlyNote: string;
   brush: EditableDutyCode | null;
   onBrushChange: (code: EditableDutyCode | null) => void;
-  // 강제 OFF 지정 모드 (7차 미팅). 켜면 칸을 눌러 여러 칸을 고르고, 아래 막대에서 한 번에 OFF로 바꾼다
-  offPick: boolean;
-  onOffPickChange: (value: boolean) => void;
+  // 칸 고르기 모드. 켜면 칸을 눌러(끌어서) 여러 칸을 고르고, 아래 막대에서 한 번에 처리한다
+  // off: 강제 OFF 지정 (7차 미팅) · regen: 고른 칸만 다시 짜기 (11/16 미팅)
+  pickMode: PickMode | null;
+  onPickModeChange: (value: PickMode | null) => void;
   canUndo: boolean;
   onUndo: () => void;
   canRedo: boolean;
@@ -22,6 +23,13 @@ type Props = {
   sort: ScheduleRowSort;
   onSortChange: (value: ScheduleRowSort) => void;
 };
+
+export type PickMode = "off" | "regen";
+
+const PICK_BUTTONS: { mode: PickMode; label: string; title: string }[] = [
+  { mode: "off", label: "OFF 지정", title: "여러 칸을 골라 한 번에 OFF로 지정해요" },
+  { mode: "regen", label: "골라서 다시 짜기", title: "고른 칸만 자동으로 다시 짜요. 나머지 근무는 그대로 둬요" },
+];
 
 // 숙련 그룹 묶음은 그대로 두고 묶음 안의 순서만 바꾼다. 기준은 lib/nurseSort.ts
 const SORT_OPTIONS: { value: ScheduleRowSort; label: string }[] = [
@@ -73,8 +81,8 @@ export default function ScheduleToolbar({
   readOnlyNote,
   brush,
   onBrushChange,
-  offPick,
-  onOffPickChange,
+  pickMode,
+  onPickModeChange,
   canUndo,
   onUndo,
   canRedo,
@@ -129,22 +137,28 @@ export default function ScheduleToolbar({
           );
         })}
         <span aria-hidden className="mx-1 h-6 w-px bg-line" />
-        <button
-          type="button"
-          aria-pressed={offPick}
-          onClick={() => onOffPickChange(!offPick)}
-          title="여러 칸을 골라 한 번에 OFF로 지정해요"
-          className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-            offPick
-              ? "bg-primary text-white shadow-[0_2px_8px_rgb(25_31_40/0.12)]"
-              : "border border-line bg-white text-ink-sub hover:border-grid hover:text-ink"
-          }`}
-        >
-          <span aria-hidden className={`flex size-4 items-center justify-center rounded-[5px] border text-[11px] leading-none ${offPick ? "border-white" : "border-grid"}`}>
-            ✓
-          </span>
-          OFF 지정
-        </button>
+        {PICK_BUTTONS.map(({ mode, label, title }) => {
+          const active = pickMode === mode;
+          return (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onPickModeChange(active ? null : mode)}
+              title={title}
+              className={`flex h-11 items-center gap-2 rounded-[12px] px-3.5 text-[16px] font-bold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                active
+                  ? "bg-primary text-white shadow-[0_2px_8px_rgb(25_31_40/0.12)]"
+                  : "border border-line bg-white text-ink-sub hover:border-grid hover:text-ink"
+              }`}
+            >
+              <span aria-hidden className={`flex size-4 items-center justify-center rounded-[5px] border text-[11px] leading-none ${active ? "border-white" : "border-grid"}`}>
+                ✓
+              </span>
+              {label}
+            </button>
+          );
+        })}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {sortControl}

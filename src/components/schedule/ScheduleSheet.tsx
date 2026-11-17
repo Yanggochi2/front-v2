@@ -8,11 +8,13 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleChip from "@/components/ui/ScheduleChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
+import { regenNoticeText, setRegenNotice, useRegenNotice } from "@/hooks/useRegenNotice";
 import { type CellPos, useScheduleEditor } from "@/hooks/useScheduleEditor";
 import { compareNurses } from "@/lib/nurseSort";
 import type { EditableDutyCode, ScheduleIssue, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ForcedOffBar from "./ForcedOffBar";
+import PartialRegenBar from "./PartialRegenBar";
 import ScheduleBottomBar from "./ScheduleBottomBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
@@ -21,7 +23,7 @@ import ScheduleIssues from "./ScheduleIssues";
 import ScheduleLegend from "./ScheduleLegend";
 import ScheduleShareButtons from "./ScheduleShareButtons";
 import ScheduleShareLink from "./ScheduleShareLink";
-import ScheduleToolbar from "./ScheduleToolbar";
+import ScheduleToolbar, { type PickMode } from "./ScheduleToolbar";
 
 type Popover = { row: number; col: number; top: number; left: number; above: boolean };
 
@@ -67,7 +69,7 @@ const READONLY_NOTE: Partial<Record<ScheduleStatus, string>> = {
 };
 const OFFLINE_NOTE = "서버에 연결되면 고칠 수 있어요";
 
-// 사유 입력칸에서 누른 Esc는 강제 OFF 모드를 끄지 않는다.
+// 사유 입력칸에서 누른 Esc는 칸 고르기 모드를 끄지 않는다.
 function isTypingTarget(target: EventTarget | null) {
   const el = target as HTMLElement | null;
   return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
@@ -79,8 +81,12 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const editor = useScheduleEditor(sheet);
   const { rows, setDuty } = editor;
   const [brush, setBrush] = useState<EditableDutyCode | null>(null);
-  // 강제 OFF 지정 모드와 고른 칸 ("행 index:열" → 위치). 칸 바꾸기(브러시)와 동시에 켜지지 않는다.
-  const [offPick, setOffPick] = useState(false);
+  // 칸 고르기 모드(강제 OFF 지정 · 골라서 다시 짜기)와 고른 칸 ("행 index:열" → 위치). 칸 바꾸기(브러시)와 동시에 켜지지 않는다.
+  const [pickMode, setPickMode] = useState<PickMode | null>(null);
+  // 끌어서 고르는 중이면 그 방향(고르기/풀기). 마우스를 떼면 null
+  const dragRef = useRef<"add" | "remove" | null>(null);
+  // 방금 마우스로 누른 칸은 pointerdown에서 이미 처리했으니 뒤따르는 click을 건너뛴다 (키보드로 누르면 click만 온다)
+  const pointerPickedRef = useRef(false);
   const [picked, setPicked] = useState<Map<string, CellPos>>(new Map());
   const [forceBusy, setForceBusy] = useState(false);
   const [forceNotice, setForceNotice] = useState<string | null>(null);
@@ -95,12 +101,20 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const editable = api.editable;
   const hint = !editable
     ? undefined
-    : offPick
+    : pickMode
       ? undefined
       : brush
       ? `${BRUSH_HINT[brush]}. Esc를 누르면 멈춰요`
       : "칸을 누르면 근무를 고를 수 있어요. 바꾸면 바로 저장돼요";
   const names = useMemo(() => new Map(rows.map((r) => [r.nurseKey, r.name])), [rows]);
+  // 골라서 다시 짜기 결과 안내. 다음에 아무 데나 누르면 지운다.
+  const regenNotice = useRegenNotice(api.scheduleId);
+  useEffect(() => {
+    if (!regenNotice) return;
+    const clear = () => setRegenNotice(null);
+    window.addEventListener("pointerdown", clear);
+    return () => window.removeEventListener("pointerdown", clear);
+  }, [regenNotice]);
 
   const closePopover = useCallback(() => setPopover(null), []);
 
@@ -169,33 +183,84 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
 
   function changeBrush(code: EditableDutyCode | null) {
     setBrush(code);
-    if (code) stopOffPick();
+    if (code) stopPick();
   }
 
-  function changeOffPick(on: boolean) {
-    if (!on) return stopOffPick();
+  // 모드를 바꾸면 고른 칸을 비운다 (모드마다 고를 수 있는 칸이 다르다)
+  function changePickMode(mode: PickMode | null) {
+    if (!mode) return stopPick();
     setBrush(null);
     closePopover();
     setForceNotice(null);
-    setOffPick(true);
+    generation.setError(null);
+    setPicked(new Map());
+    setPickMode(mode);
   }
 
-  function stopOffPick() {
-    setOffPick(false);
+  function stopPick() {
+    setPickMode(null);
     setPicked(new Map());
     setForceNotice(null);
+    generation.setError(null);
   }
 
-  // 이미 OFF인 칸은 바꿀 게 없어 고르지 않는다.
-  function togglePick(row: number, col: number) {
-    if (rows[row].cells[col].duty === "O") return;
+  // 강제 OFF: 이미 OFF인 칸은 바꿀 게 없어 고르지 않는다.
+  // 골라서 다시 짜기: 연차·교육은 자동 생성이 항상 남기므로 고르지 않는다.
+  function canPick(row: number, col: number) {
+    const { duty, editable: cellEditable } = rows[row].cells[col];
+    // 소속 기간 밖처럼 고칠 수 없는 칸은 끌고 지나가도 고르지 않는다
+    if (cellEditable === false) return false;
+    return pickMode === "off" ? duty !== "O" : duty !== "AL" && duty !== "ED";
+  }
+
+  // on을 주면 그 상태로 맞추고(끌어서 고르기), 안 주면 뒤집는다.
+  function setPick(row: number, col: number, on?: boolean) {
+    if (!canPick(row, col)) return;
     const key = `${row}:${col}`;
     setForceNotice(null);
+    generation.setError(null);
     setPicked((prev) => {
+      const has = prev.has(key);
+      if (on === has) return prev;
       const next = new Map(prev);
-      if (!next.delete(key)) next.set(key, { row, col });
+      if (has) next.delete(key);
+      else next.set(key, { row, col });
       return next;
     });
+  }
+
+  // 칸에서 마우스를 누르면 그 칸을 뒤집고, 누른 채 지나가는 칸을 같은 방향으로 맞춘다 (11/16 미팅 "드래그 선택").
+  function handleCellPointer(row: number, col: number, phase: "down" | "enter") {
+    if (!pickMode) return;
+    if (phase === "down") {
+      pointerPickedRef.current = true;
+      // 고를 수 없는 칸(이미 OFF 등)에서 끌기 시작해도 지나가는 칸은 고른다
+      const on = !canPick(row, col) || !picked.has(`${row}:${col}`);
+      dragRef.current = on ? "add" : "remove";
+      setPick(row, col, on);
+    } else if (dragRef.current) {
+      setPick(row, col, dragRef.current === "add");
+    }
+  }
+
+  useEffect(() => {
+    if (!pickMode) return;
+    const onUp = () => {
+      dragRef.current = null;
+      // 같은 칸에서 뗐으면 바로 뒤에 click이 온다. 그 click까지만 건너뛰도록 한 박자 뒤에 푼다.
+      setTimeout(() => (pointerPickedRef.current = false), 0);
+    };
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [pickMode]);
+
+  function submitPartialRegen() {
+    const cells = [...picked.values()].map(({ row, col }) => ({ nurseId: rows[row].nurseKey, date: api.dates[col] }));
+    void generation.startCells(sheet.yearMonth, api.scheduleId, cells);
   }
 
   async function submitForceOff(reason: string) {
@@ -210,22 +275,24 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
     return ok;
   }
 
-  // 강제 OFF 지정 중에는 Esc로 그만둔다.
+  // 칸 고르기 중에는 Esc로 그만둔다. 다시 짜는 중에는 그대로 둔다.
+  const pickBusy = forceBusy || generation.loading;
   useEffect(() => {
-    if (!offPick) return;
+    if (!pickMode || pickBusy) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || isTypingTarget(e.target)) return;
-      setOffPick(false);
+      setPickMode(null);
       setPicked(new Map());
       setForceNotice(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [offPick]);
+  }, [pickMode, pickBusy]);
 
   function handleCellClick(row: number, col: number, el: HTMLElement) {
-    if (offPick) {
-      togglePick(row, col);
+    if (pickMode) {
+      if (pointerPickedRef.current) pointerPickedRef.current = false;
+      else if (!pickBusy) setPick(row, col);
       return;
     }
     if (brush) {
@@ -368,8 +435,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               readOnlyNote={READONLY_NOTE[api.status] ?? OFFLINE_NOTE}
               brush={brush}
               onBrushChange={changeBrush}
-              offPick={offPick}
-              onOffPickChange={changeOffPick}
+              pickMode={pickMode}
+              onPickModeChange={pickBusy ? () => {} : changePickMode}
               canUndo={editor.canUndo}
               onUndo={editor.undo}
               canRedo={editor.canRedo}
@@ -395,7 +462,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
               selected={popover ? { row: popover.row, col: popover.col } : sheet.selectedCell}
               spotCol={spotCol}
               painting={!!brush}
-              picked={offPick ? new Set(picked.keys()) : undefined}
+              picked={pickMode ? new Set(picked.keys()) : undefined}
+              onCellPointer={editable && pickMode && !pickBusy ? handleCellPointer : undefined}
               onCellClick={editable ? handleCellClick : undefined}
               onScroll={closePopover}
             />
@@ -433,7 +501,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
-            {offPick ? (
+            {pickMode === "off" ? (
               <div className="min-w-0 flex-1">
                 <ForcedOffBar
                   count={picked.size}
@@ -441,11 +509,27 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
                   notice={forceNotice}
                   onSubmit={submitForceOff}
                   onClear={() => setPicked(new Map())}
-                  onClose={stopOffPick}
+                  onClose={stopPick}
                 />
               </div>
             ) : null}
-            {hint ? (
+            {pickMode === "regen" ? (
+              <div className="min-w-0 flex-1">
+                <PartialRegenBar
+                  count={picked.size}
+                  busy={generation.loading}
+                  error={generation.error}
+                  onSubmit={submitPartialRegen}
+                  onClear={() => setPicked(new Map())}
+                  onClose={stopPick}
+                />
+              </div>
+            ) : null}
+            {regenNotice && !pickMode ? (
+              <p role="status" className="text-[16px] font-bold text-primary print:hidden">
+                {regenNoticeText(regenNotice)}
+              </p>
+            ) : hint ? (
               <p className={`text-[15px] print:hidden ${brush ? "font-bold text-primary" : "font-medium text-ink-mute"}`}>{hint}</p>
             ) : null}
             <div className="ml-auto">

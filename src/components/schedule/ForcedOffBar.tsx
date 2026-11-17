@@ -23,7 +23,7 @@ export default function ForcedOffBar({ count, busy, notice, onSubmit, onClear, o
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[16px] bg-primary-soft px-3 py-2 ring-1 ring-primary/20 ring-inset print:hidden">
       <p className="text-[16px] font-bold text-primary">
-        {count > 0 ? `${count}칸 골랐어요` : notice ?? "OFF로 바꿀 칸을 눌러 골라 주세요. 다시 누르면 빠져요"}
+        {count > 0 ? `${count}칸 골랐어요` : notice ?? "OFF로 바꿀 칸을 누르거나 끌어서 골라 주세요. 다시 누르면 빠져요"}
       </p>
       <label className="flex items-center gap-2 text-[15px] font-bold text-ink-sub">
         사유
