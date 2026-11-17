@@ -10,7 +10,7 @@ import {
   SKILL_LEVELS,
   STAFF_TYPE_LABEL,
 } from "@/constants/nurses.constants";
-import { allowedSkills, careerPatch, hireYearPatch, staffTypePatch } from "@/lib/nurseDraft";
+import { allowedSkills, careerPatch, hireYearPatch, recommendedSkill, staffTypePatch } from "@/lib/nurseDraft";
 import type { DutyRole, NurseDraft, NurseDraftErrors, StaffType } from "@/types/nurses.type";
 
 const baseInputCls =
@@ -41,14 +41,17 @@ type Props = {
   errors?: NurseDraftErrors;
   /** 담당 신입으로 고를 수 있는 재직 신입 간호사. 불러오지 못했으면 null */
   newNurses: { id: string; name: string }[] | null;
+  /** 새로 등록하는 화면. 숙련도를 고르지 않고 서버가 정할 값을 보여 준다 */
+  autoSkill?: boolean;
 };
 
 // 간호사 등록 입력칸. 2열 grid 안에 놓는다 (간호사 등록·수정 화면에서 같이 쓴다).
-export default function NurseProfileFields({ draft, onChange, newNurses, errors = {} }: Props) {
+export default function NurseProfileFields({ draft, onChange, newNurses, errors = {}, autoSkill = false }: Props) {
   const togglePrecepted = (id: string) =>
     onChange({ preceptorOf: draft.preceptorOf.includes(id) ? draft.preceptorOf.filter((x) => x !== id) : [...draft.preceptorOf, id] });
   const isAssistant = draft.staffType === "NURSING_ASSISTANT";
   const skills = allowedSkills(draft, SKILL_LEVELS);
+  const auto = recommendedSkill(draft);
 
   return (
     <>
@@ -157,24 +160,37 @@ export default function NurseProfileFields({ draft, onChange, newNurses, errors 
           <span className="text-[18px] font-medium text-ink-sub">개월</span>
         </div>
       </Field>
-      <Field
-        label="숙련도"
-        hint={skills.length < SKILL_LEVELS.length ? "경력 3개월 이하는 1~2만 고를 수 있어요" : "수간호사만 볼 수 있어요"}
-        error={errors.skill}
-      >
-        <div className="flex flex-wrap gap-2">
-          {skills.map((lv) => (
-            <RnOptionButton
-              key={lv}
-              selected={draft.skill === lv}
-              onClick={() => onChange({ skill: lv })}
-              className="w-[72px] text-[20px]"
-            >
-              {lv}
-            </RnOptionButton>
-          ))}
-        </div>
-      </Field>
+      {autoSkill ? (
+        <Field label="숙련도" hint="경력과 소속 시작일로 정해져요">
+          <div className="flex items-center gap-3.5">
+            <span aria-label={`숙련도 ${auto.level}`} className="flex h-14 w-[72px] shrink-0 items-center justify-center rounded-[14px] bg-primary-soft text-[20px] font-bold text-primary ring-1 ring-primary/20 ring-inset">
+              {auto.level}
+            </span>
+            <p className="text-[16px] font-medium text-ink-sub">
+              {auto.reason}. 등록한 뒤 수정 화면에서 바꿀 수 있어요.
+            </p>
+          </div>
+        </Field>
+      ) : (
+        <Field
+          label="숙련도"
+          hint={skills.length < SKILL_LEVELS.length ? "경력 3개월 이하는 1~2만 고를 수 있어요" : "수간호사만 볼 수 있어요"}
+          error={errors.skill}
+        >
+          <div className="flex flex-wrap gap-2">
+            {skills.map((lv) => (
+              <RnOptionButton
+                key={lv}
+                selected={draft.skill === lv}
+                onClick={() => onChange({ skill: lv })}
+                className="w-[72px] text-[20px]"
+              >
+                {lv}
+              </RnOptionButton>
+            ))}
+          </div>
+        </Field>
+      )}
 
       <Field label="상태">
         <div className="flex flex-wrap gap-2">
