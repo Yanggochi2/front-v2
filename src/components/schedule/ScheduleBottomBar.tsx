@@ -6,7 +6,7 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleToggle from "@/components/ui/ScheduleToggle";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useSubmit } from "@/hooks/useSubmit";
-import { cancelScheduleConfirmation, confirmSchedule, getScheduleViolations } from "@/services/scheduleApi";
+import { cancelScheduleConfirmation, confirmSchedule, getAllViolations, getScheduleById } from "@/services/scheduleApi";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ScheduleConfirmDialog from "./ScheduleConfirmDialog";
 
@@ -28,6 +28,8 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
   // 같은 확정 시도는 같은 Idempotency-Key를 쓴다. 창을 열 때 만든다.
   const [dialog, setDialog] = useState<{ kind: DialogKind; key: string } | null>(null);
   const [keepEntered, setKeepEntered] = useState(keepEnteredDefault);
+  // 확정 창을 열 때 센, 고칠 수 있는데 비어 있는 칸 수 (그 달 전체). 세는 중이거나 세지 못했으면 null
+  const [emptyCount, setEmptyCount] = useState<number | null>(null);
   const offline = scheduleId === "";
   const blocked = hardViolationCount > 0;
 
@@ -36,6 +38,12 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
     generation.setError(null);
     setKeepEntered(keepEnteredDefault);
     setDialog({ kind, key: crypto.randomUUID() });
+    if (kind !== "confirm") return;
+    // 빈 칸이 남아 있어도 서버는 확정을 받는다. 모르고 확정하지 않게 창에서 알려 준다 (주간 보기에서도 그 달 전체를 센다).
+    setEmptyCount(null);
+    getScheduleById(scheduleId)
+      .then((s) => setEmptyCount(s.cells.filter((c) => c.dutyCode === null && c.editable).length))
+      .catch(() => {});
   }
 
   async function run(reason: string) {
@@ -43,9 +51,10 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
     const ok = await submit(() =>
       dialog.kind === "confirm"
         ? // 확정 창에서 확정하는 것을 남은 소프트 위반 전체를 확인한 것으로 본다 (백엔드는 미확인 위반이 있으면 409).
+          // 권장 규칙 위반이 100건을 넘어도 빠짐없이 보내야 한다 (11/16 미팅: 위반 표시가 없는데 확정이 안 되던 원인).
           // TODO: 위반을 하나씩 확인하는 목록 UI는 시안 확정 후
-          getScheduleViolations(scheduleId, { severity: "SOFT", size: 100 }).then(({ data }) =>
-            confirmSchedule(scheduleId, { acknowledgedSoftViolationIds: data.map((v) => v.id) }, dialog.key),
+          getAllViolations(scheduleId, "SOFT").then((soft) =>
+            confirmSchedule(scheduleId, { acknowledgedSoftViolationIds: soft.map((v) => v.id) }, dialog.key),
           )
         : cancelScheduleConfirmation(scheduleId, { reason }),
     );
@@ -93,7 +102,13 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
           error={error}
           onConfirm={run}
           onClose={() => setDialog(null)}
-        />
+        >
+          {emptyCount ? (
+            <p role="alert" className="rounded-[14px] bg-danger-soft px-4 py-3 text-[16px] font-bold text-danger">
+              빈 칸이 {emptyCount}칸 남아 있어요. 그대로 확정하면 그 칸은 근무가 없는 채로 공유돼요. 먼저 채우려면 닫고 ‘자동으로 다시 짜기’를 눌러 주세요.
+            </p>
+          ) : null}
+        </ScheduleConfirmDialog>
       ) : null}
       {dialog?.kind === "regenerate" ? (
         <ScheduleConfirmDialog

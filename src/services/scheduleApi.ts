@@ -202,7 +202,7 @@ export async function getSchedulePage(params: SchedulePageParams = {}): Promise<
   if (schedule.status === "DRAFT") {
     // 작성 중일 때만 위반 목록을 받는다. 실패해도 시트는 보여 준다.
     try {
-      violations = await getAllHardViolations(schedule.id);
+      violations = await getAllViolations(schedule.id, "HARD");
     } catch {}
   }
   const holidays = await holidaysJob;
@@ -264,9 +264,10 @@ export function getScheduleViolations(scheduleId: string, query: ApiViolationQue
   return apiRequestList<ApiViolation>(`${SCHEDULES}/${scheduleId}/violations`, { query });
 }
 
-// 확정을 막는 위반(HARD) 전부. 한 페이지는 최대 100건이라, 넘으면 나머지 페이지도 받아 합친다 (위반 목록·건수가 잘리지 않게).
-async function getAllHardViolations(scheduleId: string): Promise<ApiViolation[]> {
-  const query = { severity: "HARD", size: 100 } as const;
+// 그 강도의 위반 전부. 한 페이지는 최대 100건이라, 넘으면 나머지 페이지도 받아 합친다.
+// HARD는 위반 목록·건수가 잘리지 않게, SOFT는 확정할 때 전부 확인 처리하려고 쓴다 (하나라도 빠지면 서버가 409로 확정을 막는다).
+export async function getAllViolations(scheduleId: string, severity: "HARD" | "SOFT"): Promise<ApiViolation[]> {
+  const query = { severity, size: 100 } as const;
   const first = await getScheduleViolations(scheduleId, query);
   const rest = await Promise.all(
     Array.from({ length: Math.max(0, first.meta.totalPages - 1) }, (_, i) =>
