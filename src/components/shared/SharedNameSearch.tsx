@@ -11,7 +11,8 @@ type Props = {
   clearHref: string;
 };
 
-// 공유 근무표에서 내 이름으로 내 근무만 찾아보는 검색창 (7차 미팅). 서버 화면이라 GET 폼으로 ?q= 를 붙이고,
+// 공유 근무표에서 내 이름으로 내 줄을 찾는 검색창 (7차 미팅). 찾으면 그 줄만 진하게, 나머지는 흐리게 보인다 (11/16 미팅).
+// 서버 화면이라 GET 폼으로 ?q= 를 붙이고,
 // 지금 보고 있는 보기·주·정렬은 숨은 칸으로 함께 보낸다.
 export default function SharedNameSearch({ query, view, week, sort, clearHref }: Props) {
   return (
@@ -33,7 +34,7 @@ export default function SharedNameSearch({ query, view, week, sort, clearHref }:
       </ScheduleButton>
       {query ? (
         <ScheduleButton variant="neutral" size="xs" href={clearHref}>
-          전체 보기
+          표시 풀기
         </ScheduleButton>
       ) : null}
     </form>

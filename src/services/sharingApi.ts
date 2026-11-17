@@ -25,6 +25,8 @@ export type SharedScheduleData = {
   sort: ApiSharedSort;
   /** 이름 검색어. 없으면 빈 문자열 */
   query: string;
+  /** highlight로 찾았을 때 이름이 맞는 사람의 nurseKey. 찾지 않았으면 빈 배열 */
+  matched: string[];
   view: ScheduleView;
   activeWeek: number;
   weekCount: number;
@@ -32,7 +34,8 @@ export type SharedScheduleData = {
   rows: ScheduleRow[];
 };
 
-export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string; q?: string };
+// q: 서버가 이름이 맞는 사람만 돌려준다 (내 근무만 보기). highlight: 모두 받고 이름이 맞는 사람만 표시한다 (전체 근무표에서 내 줄 찾기).
+export type SharedScheduleQuery = { sort?: ApiSharedSort; view?: ScheduleView; week?: string; q?: string; highlight?: string };
 
 // GET /shared/schedules/{token} (로그인 없이). 링크가 바뀌었거나 꺼졌으면 404를 ApiError로 던진다.
 // 공휴일 API는 수간호사 로그인이 있어야 해서 부르지 않는다. 주말만 색으로 구분한다.
@@ -50,12 +53,15 @@ export async function getSharedSchedule(token: string, query: SharedScheduleQuer
   const all = monthDates(s.yearMonth);
   const dates = view === "month" ? all : all.slice((week - 1) * 7, week * 7);
   const cells = new Map(s.cells.map((c) => [`${c.nurseId}|${c.date}`, c.dutyCode]));
+  // 서버의 이름 검색(q)과 같은 기준: 대소문자를 가리지 않고 이름에 검색어가 들어 있으면 맞는 것으로 본다
+  const needle = query.highlight?.trim().toLowerCase() ?? "";
   return {
     yearMonth: s.yearMonth,
     status: s.status,
     title: sheetTitle(view, s.yearMonth, week, nowYm, day),
     sort: s.sort,
-    query: s.query ?? query.q ?? "",
+    query: needle ? query.highlight!.trim() : (s.query ?? query.q ?? ""),
+    matched: needle ? s.nurses.filter((n) => n.name.toLowerCase().includes(needle)).map((n) => n.id) : [],
     view,
     activeWeek: week,
     weekCount: weekCountOf(s.yearMonth),
