@@ -17,7 +17,18 @@ export async function getWardSettings(): Promise<WardSettingsData> {
     dailyRequired: ward.requiredStaff,
     // TODO: 규칙 시작 방식(프리셋) 표시값은 응답에 없다. 백엔드 확정 후 결정 (RULE-01)
     ruleStartLabel: undefined,
+    shareCodeSet: ward.shareCodeSet ?? false,
   };
+}
+
+// 공유 링크 코드 정하기·바꾸기 (backend#106). 바꾸면 전에 코드를 입력한 간호사도 새 코드를 다시 넣어야 한다.
+export function setShareCode(code: string): Promise<{ shareCodeSet: boolean }> {
+  return apiRequest<{ shareCodeSet: boolean }>("/wards/me/share-code", { method: "PUT", body: { code } });
+}
+
+// 공유 링크 코드 끄기. 링크만 있으면 누구나 볼 수 있게 된다.
+export function clearShareCode(): Promise<void> {
+  return apiRequest<void>("/wards/me/share-code", { method: "DELETE" });
 }
 
 // 하루 필요 인원 수정. 병동의 필요 인원은 COVERAGE 규칙 값이라 RULE-01로 찾아 RULE-02로 고친다.

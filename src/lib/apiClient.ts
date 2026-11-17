@@ -61,11 +61,11 @@ function getCsrfToken(): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
-// 서버 컴포넌트에서 부르면 브라우저가 보낸 쿠키(HttpOnly 인증 쿠키)를 그대로 넘긴다.
-async function serverCookieHeader(): Promise<string | undefined> {
+// 서버 컴포넌트에서 부르면 브라우저가 보낸 쿠키(HttpOnly 인증 쿠키)를 그대로 넘긴다. only를 주면 그 쿠키만.
+async function serverCookieHeader(only?: (name: string) => boolean): Promise<string | undefined> {
   if (typeof window !== "undefined") return undefined;
   const { cookies } = await import("next/headers");
-  const all = (await cookies()).getAll();
+  const all = (await cookies()).getAll().filter((c) => !only || only(c.name));
   return all.length ? all.map((c) => `${c.name}=${c.value}`).join("; ") : undefined;
 }
 
@@ -81,8 +81,8 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   if (options.scheduleLockToken) headers["X-Schedule-Lock-Token"] = options.scheduleLockToken;
   // 쿠키를 먼저 읽어 서버 렌더링 시 항상 요청마다 렌더링되게 한다 (빌드 시점에 결과가 고정되지 않도록).
-  // 로그인 없이 부르는 요청(공유 링크 조회)에는 세션 쿠키를 넘기지 않는다.
-  const cookie = options.anonymous ? undefined : await serverCookieHeader();
+  // 로그인 없이 부르는 요청(공유 링크 조회)에는 세션 쿠키를 넘기지 않는다. 공유 코드를 맞혀 받은 접근 쿠키(SHARE_)만 넘긴다.
+  const cookie = await serverCookieHeader(options.anonymous ? (name) => name.startsWith("SHARE_") : undefined);
   if (cookie) headers.Cookie = cookie;
 
   if (BASE_URL === "") {

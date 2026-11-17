@@ -6,4 +6,6 @@ export type WardSettingsData = {
   dailyRequired: { D: number; E: number; N: number };
   // 응답에 없으면 행을 숨긴다
   ruleStartLabel?: string;
+  // 공유 링크 코드를 정해 두었는지
+  shareCodeSet: boolean;
 };

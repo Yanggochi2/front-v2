@@ -5,6 +5,8 @@ export type ApiWard = {
   hospitalName: string;
   wardName: string;
   requiredStaff: { D: number; E: number; N: number };
+  // 공유 링크 코드를 정해 두었는지 (9차 미팅, backend#106). 코드 값은 돌려주지 않는다
+  shareCodeSet?: boolean;
   createdAt: string;
 };
 
