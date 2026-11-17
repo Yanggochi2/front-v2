@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSubmit } from "@/hooks/useSubmit";
+import { careerRange, hireYearPatch } from "@/lib/nurseDraft";
 import { todayKst } from "@/lib/schedulePeriod";
 import { createWorkspace } from "@/services/onboardingApi";
 import OnboardingButton from "@/components/ui/OnboardingButton";
@@ -40,12 +41,15 @@ export default function CreateWardForm({ defaults, userName }: Props) {
   const { submit, loading, error } = useSubmit();
   const year = toInt(joinedYear);
   const career = toCount(careerYears) * 12 + toCount(careerMonths);
+  // 입사한 지 오래됐는데 총 경력이 그보다 짧으면 서버가 막는다 (간호사 등록과 같은 기준, 11/16 미팅)
+  const careerMin = Number.isInteger(year) && year >= 1900 && year <= THIS_YEAR ? careerRange(year).min : 0;
+  const careerTooShort = Number.isInteger(career) && career < careerMin;
   const canSubmit =
     hospital.trim() !== "" &&
     ward.trim() !== "" &&
     headName.trim() !== "" &&
     Number.isInteger(year) && year >= 1900 && year <= THIS_YEAR &&
-    Number.isInteger(career) && career >= 0 &&
+    Number.isInteger(career) && career >= 0 && !careerTooShort &&
     affiliationStart !== "" &&
     !loading;
 
@@ -101,7 +105,13 @@ export default function CreateWardForm({ defaults, userName }: Props) {
             min={1900}
             max={THIS_YEAR}
             value={joinedYear}
-            onChange={(e) => setJoinedYear(e.target.value)}
+            onChange={(e) => {
+              // 간호사 등록처럼 입사 연도를 넣으면 총 경력을 그해 입사로 가능한 최대값으로 채운다. 그 뒤에 직접 고칠 수 있다
+              const patch = hireYearPatch(e.target.value);
+              setJoinedYear(e.target.value);
+              if (patch.careerYears !== undefined) setCareerYears(patch.careerYears);
+              if (patch.careerMonths !== undefined) setCareerMonths(patch.careerMonths);
+            }}
             placeholder="예: 2005"
           />
         </div>
@@ -115,13 +125,20 @@ export default function CreateWardForm({ defaults, userName }: Props) {
           />
         </div>
       </div>
-      <p className={labelClass}>총 경력 (입사 전 경력까지)</p>
+      <p className={labelClass}>
+        총 경력 <span className="text-base font-medium text-ink-mute">입사 연도를 넣으면 채워져요. 다른 병원 경력도 더해서 넣어 주세요</span>
+      </p>
       <div className="flex items-center gap-3">
         <OnboardingInput type="number" min={0} aria-label="경력 년" value={careerYears} onChange={(e) => setCareerYears(e.target.value)} placeholder="0" />
         <span className="shrink-0 text-lg font-medium text-ink-sub">년</span>
         <OnboardingInput type="number" min={0} max={11} aria-label="경력 개월" value={careerMonths} onChange={(e) => setCareerMonths(e.target.value)} />
         <span className="shrink-0 text-lg font-medium text-ink-sub">개월</span>
       </div>
+      {careerTooShort ? (
+        <p role="alert" className="-mt-3 text-base font-medium text-danger">
+          {year}년 입사면 총 경력은 {Math.floor(careerMin / 12)}년 {careerMin % 12}개월 이상이에요.
+        </p>
+      ) : null}
       <p className={labelClass}>하루에 필요한 인원</p>
       <div className="grid grid-cols-3 gap-3">
         {SHIFTS.map((kind) => (
