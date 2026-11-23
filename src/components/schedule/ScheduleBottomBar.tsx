@@ -8,9 +8,10 @@ import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { useSubmit } from "@/hooks/useSubmit";
 import { cancelScheduleConfirmation, confirmSchedule, getAllViolations, getScheduleById } from "@/services/scheduleApi";
 import type { ScheduleStatus } from "@/types/scheduleApi.type";
+import GenerateOffTarget from "./GenerateOffTarget";
 import ScheduleConfirmDialog from "./ScheduleConfirmDialog";
 
-type DialogKind = "confirm" | "cancel" | "regenerate" | "blocked";
+type DialogKind = "confirm" | "cancel" | "generate" | "blocked";
 
 type Props = {
   scheduleId: string; // 비어 있으면 서버에 연결하지 못한 상태
@@ -18,7 +19,7 @@ type Props = {
   status: ScheduleStatus;
   hardViolationCount: number; // 0보다 크면 확정 버튼을 막는다
   staffShortage: boolean; // 남은 위반에 하루 인원 부족(병동 위반)이 있다. 막힌 이유를 알려 줄 때 병동 설정을 함께 안내한다
-  keepEnteredDefault: boolean; // 다시 짜기 창의 "넣어 둔 칸 지키기" 처음 값
+  keepEnteredDefault: boolean; // 자동 생성 창의 "넣어 둔 칸 지키기" 처음 값
 };
 
 // 시트 아래 CTA. 화면 높이 안에 시트가 다 들어오도록 고정 배치 대신 흐름 안에 둔다.
@@ -73,10 +74,10 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
             <ScheduleButton
               variant="primary-soft"
               size="sm"
-              onClick={() => open("regenerate")}
+              onClick={() => open("generate")}
               disabled={offline}
             >
-              자동으로 다시 짜기
+              자동 생성
             </ScheduleButton>
             {/* 막힌 확정 버튼은 회색으로 두되(11/13 미팅), 누르면 왜 막혔는지 알려 준다.
                 막힌 버튼은 pointer-events가 꺼져 있어 누르면 감싼 span이 받는다 */}
@@ -109,7 +110,7 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
         >
           {emptyCount ? (
             <p role="alert" className="rounded-[14px] bg-danger-soft px-4 py-3 text-[16px] font-bold text-danger">
-              빈 칸이 {emptyCount}칸 남아 있어요. 그대로 확정하면 그 칸은 근무가 없는 채로 공유돼요. 먼저 채우려면 닫고 ‘자동으로 다시 짜기’를 눌러 주세요.
+              빈 칸이 {emptyCount}칸 남아 있어요. 그대로 확정하면 그 칸은 근무가 없는 채로 공유돼요. 먼저 채우려면 닫고 ‘자동 생성’을 눌러 주세요.
             </p>
           ) : null}
         </ScheduleConfirmDialog>
@@ -126,26 +127,27 @@ export default function ScheduleBottomBar({ scheduleId, yearMonth, status, hardV
         >
           {staffShortage ? (
             <p className="rounded-[14px] bg-canvas px-4 py-3 text-[16px] font-medium text-ink-sub">
-              날마다 인원이 모자라다면, 병동 설정의 <b className="text-ink">하루 필요 인원</b>이 간호사 수에 비해 많은지 확인해 주세요. 줄인 뒤 ‘자동으로 다시 짜기’를 누르면 돼요.
+              날마다 인원이 모자라다면, 병동 설정의 <b className="text-ink">하루 필요 인원</b>이 간호사 수에 비해 많은지 확인해 주세요. 줄인 뒤 ‘자동 생성’을 누르면 돼요.
             </p>
           ) : null}
         </ScheduleConfirmDialog>
       ) : null}
-      {dialog?.kind === "regenerate" ? (
+      {dialog?.kind === "generate" ? (
         <ScheduleConfirmDialog
-          title="자동으로 다시 짤까요?"
+          title="자동 생성할까요?"
           description={
             keepEntered
               ? "근무가 들어 있는 칸은 그대로 두고 빈 칸만 채워요. 연차·교육도 그대로 남아요."
               : "연차·교육만 남기고 나머지 칸을 모두 새로 짜요. 직접 넣은 오프도 바뀌어요."
           }
-          confirmLabel="다시 짜기"
+          confirmLabel="자동 생성"
           busy={generation.loading}
           error={generation.error}
           onConfirm={() => generation.start(yearMonth, keepEntered)}
           onClose={() => setDialog(null)}
         >
           <ScheduleToggle checked={keepEntered} onChange={setKeepEntered} label="넣어 둔 근무는 그대로 두기 (종이 달력 오프 등)" />
+          <GenerateOffTarget yearMonth={yearMonth} />
         </ScheduleConfirmDialog>
       ) : null}
       {dialog?.kind === "cancel" ? (

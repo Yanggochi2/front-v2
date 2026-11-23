@@ -2,9 +2,9 @@ import ScheduleButton from "@/components/ui/ScheduleButton";
 import ScheduleChip from "@/components/ui/ScheduleChip";
 import SchedulePageHeader from "@/components/ui/SchedulePageHeader";
 import type { GenerationFailure } from "@/types/schedule.type";
-import GeneratePartialApplyButton from "./GeneratePartialApplyButton";
-import GenerateRelaxButton from "./GenerateRelaxButton";
 
+// 자동 생성 실패 화면. 규칙을 낮춰 다시 만들기·부분 결과 쓰기는 두지 않는다 (11/17 미팅: 기획에 없고 헷갈림).
+// 무엇을 못 지켰는지 보여 주고, 인원이 모자라면 그 사실을 알린 뒤 근무표로 돌아가게 한다.
 export default function GenerateFailed({ data }: { data: GenerationFailure }) {
   return (
     <>
@@ -27,29 +27,19 @@ export default function GenerateFailed({ data }: { data: GenerationFailure }) {
           </ul>
         </section>
       ) : null}
-      {/* 완화 선택지: 해가 없을 때 백엔드가 SOFT로 낮출 수 있는 규칙을 준다 */}
-      {data.options.length > 0 ? (
-        <ul className="grid w-full grid-cols-3 gap-6">
-          {data.options.map((o) => (
-            <li key={o.id} className="flex flex-col items-start gap-2.5 rounded-[24px] border border-line bg-white shadow-card px-7 py-[26px]">
-              <ScheduleChip tone={o.badge.tone}>{o.badge.label}</ScheduleChip>
-              <p className="text-[20px] font-bold text-ink">{o.title}</p>
-              <p className="text-[16px] font-medium text-ink-sub">{o.description}</p>
-              <GenerateRelaxButton jobId={data.jobId} relaxationId={o.id} yearMonth={data.yearMonth} primary={o.primary} />
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <div className="flex flex-wrap items-start gap-3">
-        <GeneratePartialApplyButton jobId={data.jobId} yearMonth={data.yearMonth} />
-        {/* 인원 부족으로 실패했으면 대개 하루 필요 인원이 간호사 수에 비해 많다 (병동 만들기 기본값 D7·E5·N5) */}
-        {data.problems.some((p) => p.includes("인원 부족")) ? (
-          <ScheduleButton variant="neutral" size="sm" href="/ward-settings">
-            하루 필요 인원 고치기
-          </ScheduleButton>
+        {data.staffShortage ? (
+          <>
+            <ScheduleButton variant="brand" size="sm" href="/nurses">
+              간호사 명단 보기
+            </ScheduleButton>
+            <ScheduleButton variant="neutral" size="sm" href="/ward-settings">
+              하루 필요 인원 확인
+            </ScheduleButton>
+          </>
         ) : null}
         <ScheduleButton variant="neutral" size="sm" href={data.yearMonth ? `/schedule?view=month&ym=${data.yearMonth}` : "/schedule"}>
-          취소
+          근무표로 돌아가기
         </ScheduleButton>
       </div>
     </>

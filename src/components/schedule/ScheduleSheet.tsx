@@ -9,6 +9,7 @@ import ScheduleChip from "@/components/ui/ScheduleChip";
 import ScheduleSegmented from "@/components/ui/ScheduleSegmented";
 import { useGenerationStart } from "@/hooks/useGenerationStart";
 import { regenNoticeText, setRegenNotice, useRegenNotice } from "@/hooks/useRegenNotice";
+import { setStaffingNotice, useStaffingNotice } from "@/hooks/useStaffingNotice";
 import { type CellPos, useScheduleEditor } from "@/hooks/useScheduleEditor";
 import { compareNurses } from "@/lib/nurseSort";
 import type { EditableDutyCode, ScheduleIssue, ScheduleRowSort, ScheduleSheetData, ScheduleView } from "@/types/schedule.type";
@@ -16,6 +17,7 @@ import type { ScheduleStatus } from "@/types/scheduleApi.type";
 import ForcedOffBar from "./ForcedOffBar";
 import PartialRegenBar from "./PartialRegenBar";
 import ScheduleBottomBar from "./ScheduleBottomBar";
+import StaffingNoticeBar from "./StaffingNoticeBar";
 import ScheduleCellPopover from "./ScheduleCellPopover";
 import ScheduleGrid from "./ScheduleGrid";
 import ScheduleImportButton from "./ScheduleImportButton";
@@ -116,6 +118,8 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   const names = useMemo(() => new Map(rows.map((r) => [r.nurseKey, r.name])), [rows]);
   // 골라서 다시 짜기 결과 안내. 다음에 아무 데나 누르면 지운다.
   const regenNotice = useRegenNotice(api.scheduleId);
+  // 자동 생성 직후 인원 적정성 알림. 닫을 때까지 남는다
+  const staffingNotice = useStaffingNotice(api.scheduleId);
   useEffect(() => {
     if (!regenNotice) return;
     const clear = () => setRegenNotice(null);
@@ -483,6 +487,13 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
             <p role="alert" className="text-[16px] font-bold text-danger">
               {editor.saveError}
             </p>
+          ) : null}
+          {staffingNotice ? (
+            <StaffingNoticeBar
+              // 간호사가 없는 위반 = 그날 인원 부족 같은 병동 위반. 그런 날 수를 센다
+              shortageDays={new Set(editor.issues.filter((i) => !i.nurseKey).map((i) => i.date)).size}
+              onClose={() => setStaffingNotice(null)}
+            />
           ) : null}
           <div ref={gridAreaRef} className="relative min-h-0 flex-1 print:flex-none">
             <ScheduleGrid
