@@ -119,7 +119,7 @@ export default function ScheduleSheet({ sheet }: { sheet: ScheduleSheetData }) {
   // 골라서 다시 짜기 결과 안내. 다음에 아무 데나 누르면 지운다.
   const regenNotice = useRegenNotice(api.scheduleId);
   // 자동 생성 직후 인원 적정성 알림. 닫을 때까지 남는다
-  const staffingNotice = useStaffingNotice(api.scheduleId);
+  const staffingNotice = useStaffingNotice(api.scheduleId, api.version);
   useEffect(() => {
     if (!regenNotice) return;
     const clear = () => setRegenNotice(null);

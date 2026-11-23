@@ -43,23 +43,33 @@ export async function stopGeneration(jobId: string, body: ApiGenerationStop): Pr
 
 // GEN-05. 해 없음(NO_SOLUTION)이어도 가장 나은 결과를 근무표에 넣는다. 사용자에게 고르게 하지 않는다 (11/17 미팅).
 // 남은 위반은 근무표에 그대로 표시되고, 인원 적정성 알림이 이유를 알려 준다. 확정은 위반을 고쳐야 할 수 있다.
-async function applyBestResult(job: ApiGenerationJob): Promise<void> {
+// 반영한 뒤의 근무표 버전을 돌려준다
+async function applyBestResult(job: ApiGenerationJob): Promise<number> {
   const schedule = await getScheduleById(job.scheduleId);
-  await apiRequest<ApiScheduleWithViolations>(`${GENERATIONS}/${job.id}/partial-result/apply`, {
+  const res = await apiRequest<ApiScheduleWithViolations>(`${GENERATIONS}/${job.id}/partial-result/apply`, {
     method: "POST",
     body: { baseVersion: schedule.version } satisfies ApiGenerationPartialApply,
   });
+  return res.schedule.version;
 }
 
 // 생성 작업이 끝났을 때 갈 화면. 해 없음이면 결과를 근무표에 넣고 근무표로 간다.
 // 근무표로 가면 true(인원 적정성 알림을 띄운다). 결과가 없는 실패(FAILED)는 실패 화면으로 간다.
-export async function settleGeneration(job: ApiGenerationJob, yearMonth: string): Promise<{ href: string; toSchedule: boolean }> {
+// version: 근무표로 갈 때 결과가 들어간 근무표 버전. 인원 적정성 알림을 이 버전이 화면에 올라온 뒤에 띄운다
+export async function settleGeneration(
+  job: ApiGenerationJob,
+  yearMonth: string,
+): Promise<{ href: string; toSchedule: boolean; version: number | null }> {
+  const toMonth = `/schedule?view=month&ym=${yearMonth}`;
   if (job.status === "NO_SOLUTION") {
-    await applyBestResult(job);
-    return { href: `/schedule?view=month&ym=${yearMonth}`, toSchedule: true };
+    return { href: toMonth, toSchedule: true, version: await applyBestResult(job) };
   }
-  const href = generationHref(job, yearMonth);
-  return { href, toSchedule: job.status === "SUCCEEDED" || job.status === "STOPPED" };
+  if (job.status === "SUCCEEDED" || job.status === "STOPPED") {
+    // 결과 버전을 모르면 알림만 띄우지 않는다 (근무표는 이미 바뀌었다)
+    const version = await getScheduleById(job.scheduleId).then((s) => s.version, () => null);
+    return { href: toMonth, toSchedule: true, version };
+  }
+  return { href: generationHref(job, yearMonth), toSchedule: false, version: null };
 }
 
 // ---- 생성 시작 흐름 ----

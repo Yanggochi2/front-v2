@@ -26,7 +26,7 @@ export default function GenerationPoller({ jobId, yearMonth }: { jobId: string; 
         clearInterval(timer);
         try {
           const next = await settleGeneration(job, yearMonth);
-          if (next.toSchedule) setStaffingNotice(job.scheduleId);
+          if (next.version !== null) setStaffingNotice({ scheduleId: job.scheduleId, version: next.version });
           router.replace(next.href);
         } catch {
           // 결과를 근무표에 넣지 못했으면(그사이 근무표가 바뀜 등) 실패 화면에서 이유를 보여 준다
