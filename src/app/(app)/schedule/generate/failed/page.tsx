@@ -19,7 +19,7 @@ export default async function ScheduleGenerateFailedPage({ searchParams }: { sea
   }
   return (
     <div className="flex flex-col gap-8 px-12 pt-12 pb-10">
-      {offline ? <ApiOfflineBanner retryHref={jobId ? `/schedule/generate/failed?jobId=${encodeURIComponent(jobId)}` : "/schedule/generate"} /> : null}
+      {offline ? <ApiOfflineBanner retryHref={jobId ? `/schedule/generate/failed?jobId=${encodeURIComponent(jobId)}` : "/schedule"} /> : null}
       <GenerateFailed data={data} />
     </div>
   );

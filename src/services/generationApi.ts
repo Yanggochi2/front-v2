@@ -5,7 +5,6 @@ import type {
   ApiFixedCell,
   ApiGenerationJob,
   ApiGenerationPartialApply,
-  ApiGenerationRelaxations,
   ApiGenerationStart,
   ApiGenerationStop,
   ApiSchedule,
@@ -40,18 +39,27 @@ export async function stopGeneration(jobId: string, body: ApiGenerationStop): Pr
   }
 }
 
-// GEN-04. 완화 선택 후 새 작업이 시작된다.
-export function startRelaxedGeneration(jobId: string, body: ApiGenerationRelaxations, idempotencyKey: string) {
-  return apiRequest<ApiGenerationJob>(`${GENERATIONS}/${jobId}/relaxations`, {
+// GEN-04(규칙을 SOFT로 낮춰 다시 생성)는 화면에서 뺐다. 11/17 미팅: 하드/소프트 선택은 기획에 없고 헷갈린다.
+
+// GEN-05. 해 없음(NO_SOLUTION)이어도 가장 나은 결과를 근무표에 넣는다. 사용자에게 고르게 하지 않는다 (11/17 미팅).
+// 남은 위반은 근무표에 그대로 표시되고, 인원 적정성 알림이 이유를 알려 준다. 확정은 위반을 고쳐야 할 수 있다.
+async function applyBestResult(job: ApiGenerationJob): Promise<void> {
+  const schedule = await getScheduleById(job.scheduleId);
+  await apiRequest<ApiScheduleWithViolations>(`${GENERATIONS}/${job.id}/partial-result/apply`, {
     method: "POST",
-    body,
-    idempotencyKey,
+    body: { baseVersion: schedule.version } satisfies ApiGenerationPartialApply,
   });
 }
 
-// GEN-05
-export function applyPartialResult(jobId: string, body: ApiGenerationPartialApply) {
-  return apiRequest<ApiScheduleWithViolations>(`${GENERATIONS}/${jobId}/partial-result/apply`, { method: "POST", body });
+// 생성 작업이 끝났을 때 갈 화면. 해 없음이면 결과를 근무표에 넣고 근무표로 간다.
+// 근무표로 가면 true(인원 적정성 알림을 띄운다). 결과가 없는 실패(FAILED)는 실패 화면으로 간다.
+export async function settleGeneration(job: ApiGenerationJob, yearMonth: string): Promise<{ href: string; toSchedule: boolean }> {
+  if (job.status === "NO_SOLUTION") {
+    await applyBestResult(job);
+    return { href: `/schedule?view=month&ym=${yearMonth}`, toSchedule: true };
+  }
+  const href = generationHref(job, yearMonth);
+  return { href, toSchedule: job.status === "SUCCEEDED" || job.status === "STOPPED" };
 }
 
 // ---- 생성 시작 흐름 ----
@@ -62,21 +70,6 @@ function enteredCells(schedule: ApiSchedule): ApiFixedCell[] {
   return schedule.cells
     .filter((c) => c.dutyCode !== null && c.dutyCode !== "AL" && c.dutyCode !== "ED")
     .map((c) => ({ nurseId: c.nurseId, date: c.date }));
-}
-
-// 자동 생성 시작 화면의 "넣어 둔 칸 지키기" 기본값용. 근무표가 없으면 null, 확정·보관된 근무표면 "LOCKED".
-export async function getGenerateStartInfo(yearMonth: string): Promise<{ entered: number; empty: number } | "LOCKED" | null> {
-  try {
-    const schedule = await getScheduleByYearMonth(yearMonth);
-    if (schedule.status !== "DRAFT") return "LOCKED";
-    return {
-      entered: enteredCells(schedule).length,
-      empty: schedule.cells.filter((c) => c.dutyCode === null && c.editable).length,
-    };
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null;
-    throw e;
-  }
 }
 
 // 그 달 근무표를 찾고, 없으면 빈 근무표를 만든 뒤 자동 생성을 시작한다.
@@ -129,13 +122,6 @@ export function generationHref(job: ApiGenerationJob, yearMonth: string): string
   if (job.status === "SUCCEEDED" || job.status === "STOPPED") return `/schedule?view=month&ym=${yearMonth}`;
   if (job.status === "NO_SOLUTION" || job.status === "FAILED") return `/schedule/generate/failed?jobId=${job.id}`;
   return `/schedule/generate?jobId=${job.id}`;
-}
-
-// GEN-05. 실패한 작업의 부분 결과를 근무표에 그대로 쓴다.
-export async function applyPartialResultForJob(jobId: string): Promise<ApiSchedule> {
-  const job = await getGenerationJob(jobId);
-  const schedule = await getScheduleById(job.scheduleId);
-  return (await applyPartialResult(jobId, { baseVersion: schedule.version })).schedule;
 }
 
 // ---- 화면용 ----
@@ -205,28 +191,30 @@ export async function getGenerationFailure(jobId: string): Promise<GenerationFai
     } catch {}
   }
   const noSolution = job.status === "NO_SOLUTION";
+  // 하루 인원을 못 채워 실패했으면 규칙을 낮추는 대신 "이 인원으로는 안 된다"고 알린다 (11/17 미팅: 인원 적정성 알림)
+  const staffShortage = problems.some((p) => p.includes("인원 부족"));
   return {
     jobId,
     yearMonth: schedule.yearMonth,
     title: noSolution ? "조건을 모두 맞추는 근무표를 찾지 못했어요" : "근무표를 만들지 못했어요",
     subtitle: `${periodLabel(schedule.yearMonth)} · 지키지 못한 규칙 ${problems.length || job.hardViolationCount}건`,
     cause: {
-      tag: "원인",
-      headline: noSolution ? "지킬 수 없는 규칙이 있어요" : "생성 중에 문제가 생겼어요",
+      tag: staffShortage ? "인원 부족" : "원인",
+      headline: staffShortage
+        ? "이 인원으로는 근무가 돌아가지 않습니다"
+        : noSolution
+          ? "지킬 수 없는 규칙이 있어요"
+          : "생성 중에 문제가 생겼어요",
       detail:
         job.error ||
-        (problems.length > 0
-          ? "아래 내용을 보고 규칙이나 인원을 조정한 뒤 다시 만들어 주세요."
-          : "규칙이나 인원을 조정한 뒤 다시 만들어 주세요."),
+        (staffShortage
+          ? "간호사 수에 비해 날마다 필요한 인원이 많아요. 간호사를 더 등록하거나 병동 설정의 하루 필요 인원을 확인한 뒤 다시 만들어 주세요."
+          : problems.length > 0
+            ? "아래 내용을 보고 규칙이나 인원을 조정한 뒤 다시 만들어 주세요."
+            : "규칙이나 인원을 조정한 뒤 다시 만들어 주세요."),
     },
     problems,
-    options: (job.relaxations ?? []).map((r, i) => ({
-      id: r.id,
-      badge: { label: "완화", tone: "brand" as const },
-      title: r.description,
-      description: "이 규칙을 권장(SOFT)으로 낮추고 다시 만들어요. 규칙 설정에도 반영돼요.",
-      primary: i === 0,
-    })),
+    staffShortage,
   };
 }
 
@@ -254,6 +242,6 @@ export function getEmptyGenerationFailure(): GenerationFailure {
     subtitle: "",
     cause: { tag: "원인", headline: "", detail: "" },
     problems: [],
-    options: [],
+    staffShortage: false,
   };
 }

@@ -121,14 +121,6 @@ export type GenerationProgress = {
   metrics: GenerationMetric[];
 };
 
-export type GenerationFailureOption = {
-  id: string;
-  badge: { label: string; tone: "brand" | "danger" };
-  title: string;
-  description: string;
-  primary: boolean;
-};
-
 export type GenerationFailure = {
   jobId: string;
   yearMonth: string;
@@ -136,5 +128,5 @@ export type GenerationFailure = {
   subtitle: string;
   cause: { tag: string; headline: string; detail: string };
   problems: string[]; // 남은 하드 위반 메시지
-  options: GenerationFailureOption[];
+  staffShortage: boolean; // 하루 인원을 못 채워 실패했다
 };
