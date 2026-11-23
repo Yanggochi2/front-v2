@@ -21,7 +21,7 @@ export function useGenerationStart() {
     const ok = await submit(async () => {
       const job = await begin(key);
       const next = await settleGeneration(job, yearMonth);
-      if (staffingNotice && next.toSchedule) setStaffingNotice(job.scheduleId);
+      if (staffingNotice && next.version !== null) setStaffingNotice({ scheduleId: job.scheduleId, version: next.version });
       href = next.href;
     });
     if (ok && href) {
